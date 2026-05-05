@@ -1,0 +1,246 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      # 如需发布带正式签名的 Android APK，请按下方「Android 签名配置」步骤操作。
+      # 未配置时，将使用 debug 签名构建（仅限测试，不适合应用商店分发）。
+      - name: Setup Android signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        if: env.KEYSTORE_BASE64 != ''
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+          echo "storeFile=app/upload-keystore.jks" > android/key.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: |
+          mkdir -p release
+          cp build/app/outputs/flutter-apk/app-release.apk release/OpenTavern-${{ github.ref_name }}-android.apk
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: release/*.apk
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Web
+        run: flutter build web --release
+
+      - name: Archive Web
+        run: |
+          mkdir -p release
+          cd build/web
+          zip -r ../../release/OpenTavern-${{ github.ref_name }}-web.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: release/*.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev libblkid-dev liblzma-dev
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Archive Linux
+        run: |
+          mkdir -p release
+          cd build/linux/x64/release/bundle
+          tar czf ../../../../../release/OpenTavern-${{ github.ref_name }}-linux-x64.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: release/*.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Archive Windows
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "release/OpenTavern-${{ github.ref_name }}-windows-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: release/*.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Archive macOS
+        run: |
+          mkdir -p release
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../../release/OpenTavern-${{ github.ref_name }}-macos.zip OpenTavern.app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: release/*.zip
+
+  # iOS 构建说明：
+  # 以下步骤产出的是未签名的 IPA，只能在越狱设备或模拟器上安装。
+  # 如需正式分发到真机或 App Store，必须在仓库 Secrets 中配置：
+  #   - APPLE_CERTIFICATE（Base64 编码的 .p12）
+  #   - APPLE_CERTIFICATE_PASSWORD
+  #   - APPLE_PROVISIONING_PROFILE（Base64 编码的 .mobileprovision）
+  #   - APPLE_TEAM_ID
+  # 并修改构建步骤启用代码签名。此配置较为复杂，建议参考 Flutter 官方文档。
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
+
+      - name: Package iOS
+        run: |
+          mkdir -p release
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r ../../../release/OpenTavern-${{ github.ref_name }}-ios-no-codesign.ipa Payload
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: release/*.ipa
+
+  release:
+    needs: [build-android, build-web, build-linux, build-windows, build-macos, build-ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
