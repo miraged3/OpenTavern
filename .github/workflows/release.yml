@@ -2,6 +2,8 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
@@ -23,8 +25,6 @@ jobs:
           flutter pub get
           flutter gen-l10n
 
-      # 如需发布带正式签名的 Android APK，请按下方「Android 签名配置」步骤操作。
-      # 未配置时，将使用 debug 签名构建（仅限测试，不适合应用商店分发）。
       - name: Setup Android signing
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
@@ -50,39 +50,7 @@ jobs:
           name: android
           path: release/*.apk
 
-  build-web:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Get dependencies
-        run: |
-          flutter pub get
-          flutter gen-l10n
-
-      - name: Build Web
-        run: flutter build web --release
-
-      - name: Archive Web
-        run: |
-          mkdir -p release
-          cd build/web
-          zip -r ../../release/OpenTavern-${{ github.ref_name }}-web.zip .
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: web
-          path: release/*.zip
-
-  build-linux:
+  build-linux-x64:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -104,10 +72,10 @@ jobs:
           flutter pub get
           flutter gen-l10n
 
-      - name: Build Linux
-        run: flutter build linux --release
+      - name: Build Linux x64
+        run: flutter build linux --release --target-platform linux-x64
 
-      - name: Archive Linux
+      - name: Archive Linux x64
         run: |
           mkdir -p release
           cd build/linux/x64/release/bundle
@@ -116,10 +84,47 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux
+          name: linux-x64
           path: release/*.tar.gz
 
-  build-windows:
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev libblkid-dev liblzma-dev
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Linux ARM64
+        run: flutter build linux --release --target-platform linux-arm64
+
+      - name: Archive Linux ARM64
+        run: |
+          mkdir -p release
+          cd build/linux/arm64/release/bundle
+          tar czf ../../../../../release/OpenTavern-${{ github.ref_name }}-linux-arm64.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: release/*.tar.gz
+
+  build-windows-x64:
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -136,10 +141,10 @@ jobs:
           flutter pub get
           flutter gen-l10n
 
-      - name: Build Windows
+      - name: Build Windows x64
         run: flutter build windows --release
 
-      - name: Archive Windows
+      - name: Archive Windows x64
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path release
@@ -148,7 +153,39 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: windows-x64
+          path: release/*.zip
+
+  build-windows-arm64:
+    runs-on: windows-11-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
+      - name: Build Windows ARM64
+        run: flutter build windows --release
+
+      - name: Archive Windows ARM64
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path release
+          Compress-Archive -Path "build/windows/arm64/runner/Release/*" -DestinationPath "release/OpenTavern-${{ github.ref_name }}-windows-arm64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
           path: release/*.zip
 
   build-macos:
@@ -183,51 +220,10 @@ jobs:
           name: macos
           path: release/*.zip
 
-  # iOS 构建说明：
-  # 以下步骤产出的是未签名的 IPA，只能在越狱设备或模拟器上安装。
-  # 如需正式分发到真机或 App Store，必须在仓库 Secrets 中配置：
-  #   - APPLE_CERTIFICATE（Base64 编码的 .p12）
-  #   - APPLE_CERTIFICATE_PASSWORD
-  #   - APPLE_PROVISIONING_PROFILE（Base64 编码的 .mobileprovision）
-  #   - APPLE_TEAM_ID
-  # 并修改构建步骤启用代码签名。此配置较为复杂，建议参考 Flutter 官方文档。
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - name: Get dependencies
-        run: |
-          flutter pub get
-          flutter gen-l10n
-
-      - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign
-
-      - name: Package iOS
-        run: |
-          mkdir -p release
-          cd build/ios/iphoneos
-          mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r ../../../release/OpenTavern-${{ github.ref_name }}-ios-no-codesign.ipa Payload
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios
-          path: release/*.ipa
-
   release:
-    needs: [build-android, build-web, build-linux, build-windows, build-macos, build-ios]
+    needs: [build-android, build-linux-x64, build-linux-arm64, build-windows-x64, build-windows-arm64, build-macos]
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
