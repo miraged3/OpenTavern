@@ -11,6 +11,7 @@ import '../../../core/llm/character_prompt_builder.dart';
 import '../../../core/models/character.dart';
 import '../../../core/models/chat_message.dart';
 import '../../../core/models/conversation.dart';
+import '../../../core/models/conversation_tree.dart';
 import '../../../core/models/generation_config.dart';
 import '../../../core/models/model_endpoint.dart';
 import '../../../core/models/user_persona.dart';
@@ -260,7 +261,8 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     final composerBottomInset = _keyboardHeight > bottomSafeInset
         ? _keyboardHeight
         : bottomSafeInset;
-    final messageCount = conversation.messages.length;
+    final visibleMessages = activeConversationPath(conversation);
+    final messageCount = visibleMessages.length;
     final shouldAutoScroll =
         !_hasAlignedInitialScroll ||
         (messageCount > _lastMessageCount && _isNearBottom()) ||
@@ -295,13 +297,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
                 controller: _messagesScrollController,
                 reverse: true,
                 padding: const EdgeInsets.fromLTRB(0, 18, 0, 10),
-                itemCount: conversation.messages.length,
+                itemCount: visibleMessages.length,
                 itemBuilder: (context, index) {
-                  final message = conversation
-                      .messages[conversation.messages.length - 1 - index];
+                  final message =
+                      visibleMessages[visibleMessages.length - 1 - index];
                   final isUser = message.role == MessageRole.user;
+                  final siblingInfo = siblingInfoForMessage(
+                    conversation,
+                    message.id,
+                  );
                   return _ChatMessageRow(
                     message: message,
+                    siblingInfo: siblingInfo,
                     character: character,
                     userPersona: userPersona,
                     onRetry:
@@ -325,6 +332,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
                     onRegenerate: !isUser
                         ? () => _regenerateFromMessage(conversation, message)
                         : null,
+                    onPreviousSibling: siblingInfo.previousMessageId == null
+                        ? null
+                        : () => _selectSibling(
+                            conversation,
+                            siblingInfo.previousMessageId!,
+                          ),
+                    onNextSibling: siblingInfo.nextMessageId == null
+                        ? null
+                        : () => _selectSibling(
+                            conversation,
+                            siblingInfo.nextMessageId!,
+                          ),
                   );
                 },
               ),
@@ -626,9 +645,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
   ) async {
     final current = await _cancelGenerationAndReadConversation(conversation.id);
     final source = current ?? conversation;
+    final deletedIds = {
+      message.id,
+      for (final descendant in descendantsOfMessage(source, message.id))
+        descendant.id,
+    };
     final nextMessages = source.messages
-        .where((m) => m.id != message.id)
+        .where((m) => !deletedIds.contains(m.id))
         .toList();
+    final fallbackLeafId = replacementLeafAfterDeletingMessage(
+      source,
+      message.id,
+    );
     final next = Conversation(
       id: source.id,
       character: source.character,
@@ -636,6 +664,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
       userPersonaId: source.userPersonaId,
       modelEndpointId: source.modelEndpointId,
       generationConfig: source.generationConfig,
+      activeLeafMessageId: fallbackLeafId,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -651,24 +680,23 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     final index = source.messages.indexWhere((m) => m.id == message.id);
     if (index == -1) return;
 
-    final editedMessage = ChatMessage(
-      id: message.id,
-      role: message.role,
-      content: newContent,
-      timestamp: DateTime.now(),
-    );
+    final now = DateTime.now();
 
     if (message.role == MessageRole.user) {
+      final editedMessage = ChatMessage(
+        id: 'msg-${now.microsecondsSinceEpoch}',
+        role: message.role,
+        content: newContent,
+        timestamp: now,
+        parentId: message.parentId,
+      );
       final defaultUserPersona = ref.read(defaultUserPersonaProvider);
       final userPersona = source.userPersonaId == null
           ? defaultUserPersona
           : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
                 defaultUserPersona;
 
-      final nextMessages = [
-        ...source.messages.sublist(0, index),
-        editedMessage,
-      ];
+      final nextMessages = [...source.messages, editedMessage];
 
       final next = Conversation(
         id: source.id,
@@ -677,6 +705,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
         userPersonaId: source.userPersonaId,
         modelEndpointId: source.modelEndpointId,
         generationConfig: source.generationConfig,
+        activeLeafMessageId: editedMessage.id,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -685,6 +714,11 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
           .read(chatGenerationControllerProvider.notifier)
           .generateReplyForConversation(next, userPersona: userPersona);
     } else {
+      final editedMessage = message.copyWith(
+        content: newContent,
+        timestamp: now,
+        isPending: false,
+      );
       final nextMessages = [
         ...source.messages.sublist(0, index),
         editedMessage,
@@ -698,6 +732,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
         userPersonaId: source.userPersonaId,
         modelEndpointId: source.modelEndpointId,
         generationConfig: source.generationConfig,
+        activeLeafMessageId: source.activeLeafMessageId,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -719,14 +754,14 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
         : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
               defaultUserPersona;
 
-    final nextMessages = source.messages.sublist(0, index);
     final next = Conversation(
       id: source.id,
       character: source.character,
-      messages: nextMessages,
+      messages: source.messages,
       userPersonaId: source.userPersonaId,
       modelEndpointId: source.modelEndpointId,
       generationConfig: source.generationConfig,
+      activeLeafMessageId: message.parentId,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -734,6 +769,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     await ref
         .read(chatGenerationControllerProvider.notifier)
         .generateReplyForConversation(next, userPersona: userPersona);
+  }
+
+  Future<void> _selectSibling(
+    Conversation conversation,
+    String messageId,
+  ) async {
+    final leafId = latestDescendantLeafId(conversation, messageId);
+    final next = conversation.copyWith(
+      activeLeafMessageId: leafId,
+      updatedAt: DateTime.now(),
+    );
+    await ref.read(conversationsProvider.notifier).replaceConversation(next);
   }
 
   Future<Conversation?> _cancelGenerationAndReadConversation(
@@ -803,6 +850,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
 class _ChatMessageRow extends StatefulWidget {
   const _ChatMessageRow({
     required this.message,
+    required this.siblingInfo,
     required this.character,
     required this.userPersona,
     this.onRetry,
@@ -810,9 +858,12 @@ class _ChatMessageRow extends StatefulWidget {
     this.onDelete,
     this.onEdit,
     this.onRegenerate,
+    this.onPreviousSibling,
+    this.onNextSibling,
   });
 
   final ChatMessage message;
+  final MessageSiblingInfo siblingInfo;
   final Character character;
   final UserPersona userPersona;
   final VoidCallback? onRetry;
@@ -820,6 +871,8 @@ class _ChatMessageRow extends StatefulWidget {
   final VoidCallback? onDelete;
   final ValueChanged<String>? onEdit;
   final VoidCallback? onRegenerate;
+  final VoidCallback? onPreviousSibling;
+  final VoidCallback? onNextSibling;
 
   @override
   State<_ChatMessageRow> createState() => _ChatMessageRowState();
@@ -888,6 +941,10 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final hasReasoning = message.reasoning.trim().isNotEmpty;
     final isTypingIndicator =
         !isUser && message.isPending && renderedContent.trim().isEmpty;
+    final maxBubbleWidth = math.min(
+      MediaQuery.sizeOf(context).width * 0.78,
+      560.0,
+    );
 
     final Widget avatar = GestureDetector(
       onTap: () {
@@ -938,7 +995,7 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
                     scale: _isPressed ? 0.96 : 1.0,
                     duration: const Duration(milliseconds: 100),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
+                      constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: bubbleColor,
@@ -1016,11 +1073,35 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
                 const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    _formatTime(message.timestamp),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: colors.tertiaryText),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.siblingInfo.hasSiblings) ...[
+                        _SiblingButton(
+                          icon: Icons.chevron_left_rounded,
+                          onTap: widget.onPreviousSibling,
+                        ),
+                        Text(
+                          '${widget.siblingInfo.index + 1}/${widget.siblingInfo.count}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colors.tertiaryText,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        _SiblingButton(
+                          icon: Icons.chevron_right_rounded,
+                          onTap: widget.onNextSibling,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.tertiaryText,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1199,6 +1280,32 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+}
+
+class _SiblingButton extends StatelessWidget {
+  const _SiblingButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: Icon(
+          icon,
+          size: 18,
+          color: onTap == null
+              ? context.otColors.tertiaryText.withValues(alpha: 0.4)
+              : context.otColors.secondaryText,
+        ),
+      ),
+    );
   }
 }
 
@@ -1398,22 +1505,25 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(3, (index) {
-              final phase = (_controller.value - (index * 0.16)).clamp(
-                0.0,
-                1.0,
-              );
-              final opacity = 0.28 + ((1 - (phase - 0.5).abs() * 2) * 0.72);
-              final scale = 0.78 + ((1 - (phase - 0.5).abs() * 2) * 0.22);
+              final phase = (_controller.value + index * 0.22) % 1.0;
+              final wave =
+                  (math.sin((phase * math.pi * 2) - math.pi / 2) + 1) / 2;
+              final opacity = 0.32 + wave * 0.68;
+              final scale = 0.78 + wave * 0.22;
+              final yOffset = (1 - wave) * 2;
               return Opacity(
-                opacity: opacity.clamp(0.28, 1.0),
-                child: Transform.scale(
-                  scale: scale.clamp(0.78, 1.0),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: widget.colors.secondaryText,
-                      shape: BoxShape.circle,
+                opacity: opacity,
+                child: Transform.translate(
+                  offset: Offset(0, yOffset),
+                  child: Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: widget.colors.secondaryText,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),

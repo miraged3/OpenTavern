@@ -7,6 +7,7 @@ import '../../../app/l10n_extension.dart';
 import '../../../app/ui_style.dart';
 import '../../../core/llm/character_prompt_builder.dart';
 import '../../../core/models/conversation.dart';
+import '../../../core/models/conversation_tree.dart';
 import '../../../core/models/user_persona.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../shared/presentation/widgets/ot_character_avatar.dart';
@@ -323,7 +324,7 @@ class _ConversationRow extends ConsumerWidget {
     final isGenerating = ref.watch(
       isConversationGeneratingProvider(conversation.id),
     );
-    final lastMessage = conversation.messages.lastOrNull;
+    final lastMessage = activeConversationPath(conversation).lastOrNull;
     final subtitle = lastMessage == null
         ? conversation.character.description
         : lastMessage.isPending &&

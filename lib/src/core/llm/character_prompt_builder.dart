@@ -1,6 +1,7 @@
 import '../models/character.dart';
 import '../models/chat_message.dart';
 import '../models/conversation.dart';
+import '../models/conversation_tree.dart';
 import '../models/user_persona.dart';
 
 const String defaultUserName = 'User';
@@ -255,7 +256,7 @@ List<ChatMessage> buildConversationMessagesForModel(
 
   // 处理历史消息，先做变量替换
   final historyMessages = <ChatMessage>[
-    for (final message in conversation.messages)
+    for (final message in activeConversationPath(conversation))
       if (message.role != MessageRole.system)
         ChatMessage(
           id: message.id,
