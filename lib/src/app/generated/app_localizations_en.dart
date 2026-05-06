@@ -610,6 +610,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutOpenTavern => 'About OpenTavern';
 
   @override
+  String get aboutOpenTavernDescription =>
+      'OpenTavern is an open-source, mobile-first character chat client.';
+
+  @override
+  String get aboutOpenTavernRepository =>
+      'Project: https://github.com/miraged3/OpenTavern';
+
+  @override
   String get currentSelected => 'Current';
 
   @override

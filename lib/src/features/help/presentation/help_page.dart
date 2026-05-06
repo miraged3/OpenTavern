@@ -51,6 +51,11 @@ class HelpPage extends StatelessWidget {
         backgroundColor: colors.accent.withValues(alpha: 0.12),
         child: Icon(Icons.local_fire_department_rounded, color: colors.accent),
       ),
+      children: [
+        Text(context.l10n.aboutOpenTavernDescription),
+        const SizedBox(height: 8),
+        SelectableText(context.l10n.aboutOpenTavernRepository),
+      ],
     );
   }
 }

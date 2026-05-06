@@ -203,6 +203,8 @@
   "setDefaultSwitch": "Set as Default",
   "helpTitle": "Help",
   "aboutOpenTavern": "About OpenTavern",
+  "aboutOpenTavernDescription": "OpenTavern is an open-source, mobile-first character chat client.",
+  "aboutOpenTavernRepository": "Project: https://github.com/miraged3/OpenTavern",
   "currentSelected": "Current",
   "modelLabel": "Model",
   "paramsLabel": "Parameters",

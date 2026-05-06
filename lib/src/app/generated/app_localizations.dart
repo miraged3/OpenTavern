@@ -1226,6 +1226,18 @@ abstract class AppLocalizations {
   /// **'About OpenTavern'**
   String get aboutOpenTavern;
 
+  /// No description provided for @aboutOpenTavernDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenTavern is an open-source, mobile-first character chat client.'**
+  String get aboutOpenTavernDescription;
+
+  /// No description provided for @aboutOpenTavernRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'Project: https://github.com/miraged3/OpenTavern'**
+  String get aboutOpenTavernRepository;
+
   /// No description provided for @currentSelected.
   ///
   /// In en, this message translates to:

@@ -188,6 +188,8 @@
   "setDefaultSwitch": "设为默认",
   "helpTitle": "帮助",
   "aboutOpenTavern": "关于 OpenTavern",
+  "aboutOpenTavernDescription": "OpenTavern 是一个移动优先的开源角色聊天客户端",
+  "aboutOpenTavernRepository": "项目地址：https://github.com/miraged3/OpenTavern",
   "currentSelected": "当前",
   "modelLabel": "模型",
   "paramsLabel": "参数",
