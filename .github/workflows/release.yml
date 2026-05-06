@@ -91,7 +91,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-x64
+          name: OpenTavern-${{ github.ref_name }}-linux-x64-bundle
           path: release/OpenTavern-${{ github.ref_name }}-linux-x64/
           compression-level: 0
           if-no-files-found: error
@@ -131,7 +131,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-arm64
+          name: OpenTavern-${{ github.ref_name }}-linux-arm64-bundle
           path: release/OpenTavern-${{ github.ref_name }}-linux-arm64/
           compression-level: 0
           if-no-files-found: error
@@ -166,7 +166,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: windows-x64
+          name: OpenTavern-${{ github.ref_name }}-windows-x64-bundle
           path: release/OpenTavern-${{ github.ref_name }}-windows-x64/
           compression-level: 0
           if-no-files-found: error
@@ -204,7 +204,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: windows-arm64
+          name: OpenTavern-${{ github.ref_name }}-windows-arm64-bundle
           path: release/OpenTavern-${{ github.ref_name }}-windows-arm64/
           compression-level: 0
           if-no-files-found: error
@@ -238,7 +238,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: macos
+          name: OpenTavern-${{ github.ref_name }}-macos-app
           path: release/OpenTavern-${{ github.ref_name }}-macos.app/
           compression-level: 0
           if-no-files-found: error
