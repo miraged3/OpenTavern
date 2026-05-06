@@ -604,8 +604,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutOpenTavern => '关于 OpenTavern';
 
   @override
-  String get aboutOpenTavernDescription =>
-      'OpenTavern 是一个移动优先的开源角色聊天客户端';
+  String get aboutOpenTavernDescription => 'OpenTavern 是一个移动优先的开源角色聊天客户端';
 
   @override
   String get aboutOpenTavernRepository =>
