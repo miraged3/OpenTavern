@@ -26,17 +26,31 @@
 
 ## 快速开始
 
+### 下载应用
+
+OpenTavern 通过 GitHub Releases 分发。普通使用请直接下载最新构建产物，不需要自行从源码构建：
+
+1. 打开 [latest release](https://github.com/miraged3/OpenTavern/releases/latest)。
+2. 下载与你的平台对应的安装包或压缩包。
+3. 安装或解压后运行 OpenTavern。
+
+当前 release workflow 可能会提供 Android APK、macOS app zip、Windows x64 bundle 和 Linux bundle，具体以对应 Release 页面为准。
+
+### 从源码构建
+
+从源码构建主要用于开发、测试或贡献代码。
+
 ### 环境要求
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) `^3.11.4`
 - 任意 IDE（VS Code / Android Studio / Xcode）
 
-### 运行项目
+### 本地运行
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/opentavern.git
-cd opentavern
+git clone https://github.com/miraged3/OpenTavern.git
+cd OpenTavern
 
 # 2. 安装依赖
 flutter pub get

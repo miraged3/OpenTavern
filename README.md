@@ -26,17 +26,31 @@
 
 ## Getting Started
 
+### Download the app
+
+OpenTavern is distributed through GitHub Releases. For normal use, download the latest build directly instead of building from source:
+
+1. Open the [latest release](https://github.com/miraged3/OpenTavern/releases/latest).
+2. Download the package for your platform.
+3. Install or unpack it and run OpenTavern.
+
+Available release artifacts depend on the current release workflow, and may include Android APK, macOS app zip, Windows x64 bundle, and Linux bundles.
+
+### Build from source
+
+Building from source is intended for development, testing, or contributing.
+
 ### Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) `^3.11.4`
 - A valid IDE (VS Code / Android Studio / Xcode)
 
-### Run the app
+### Run locally
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/yourusername/opentavern.git
-cd opentavern
+git clone https://github.com/miraged3/OpenTavern.git
+cd OpenTavern
 
 # 2. Install dependencies
 flutter pub get
