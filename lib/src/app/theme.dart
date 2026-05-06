@@ -1,17 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'ui_style.dart';
-
-const _windowsFontFamily = 'Segoe UI';
-const _windowsFontFallback = <String>[
-  'Microsoft YaHei UI',
-  'Microsoft YaHei',
-  'Yu Gothic UI',
-  'Meiryo',
-  'Noto Sans CJK SC',
-  'sans-serif',
-];
 
 ThemeData buildOpenTavernTheme({required Brightness brightness}) {
   const primary = Color(0xFF111111);
@@ -38,9 +28,8 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
     brightness: brightness,
     surface: surface,
   );
-  final isWindows = defaultTargetPlatform == TargetPlatform.windows;
-  final fontFamily = isWindows ? _windowsFontFamily : null;
-  final fontFamilyFallback = isWindows ? _windowsFontFallback : null;
+  final fontFamily = OTStyle.fontFamily;
+  final fontFamilyFallback = OTStyle.fontFamilyFallback;
   final baseTheme = ThemeData(
     colorScheme: scheme,
     fontFamily: fontFamily,
@@ -73,7 +62,9 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
         inverseText: inverseText,
         accent: accent,
         infoBanner: isDark ? const Color(0xFF18181B) : const Color(0xFFF9FAFB),
-        quoteBackground: isDark ? const Color(0xFF18181B) : const Color(0xFFF9FAFB),
+        quoteBackground: isDark
+            ? const Color(0xFF18181B)
+            : const Color(0xFFF9FAFB),
         systemFill: isDark ? const Color(0xFF1F2937) : const Color(0xFFF2F2F7),
         shadowScrim: isDark ? const Color(0xE61A1A1C) : const Color(0xE6FFFFFF),
       ),
@@ -104,6 +95,31 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
       ),
       toolbarTextStyle: textTheme.bodyMedium?.copyWith(color: primaryText),
     ),
+    cupertinoOverrideTheme: CupertinoThemeData(
+      textTheme: CupertinoTextThemeData(
+        textStyle: OTStyle.textStyle(color: primaryText, fontSize: 17),
+        actionTextStyle: OTStyle.textStyle(
+          color: accent,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+        ),
+        tabLabelTextStyle: OTStyle.textStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+        navTitleTextStyle: OTStyle.textStyle(
+          color: primaryText,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
+        navLargeTitleTextStyle: OTStyle.textStyle(
+          color: primaryText,
+          fontSize: 34,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+        ),
+      ),
+    ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: surface,
       indicatorColor: Colors.transparent,
@@ -112,13 +128,10 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
       height: 62,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStatePropertyAll(
-        TextStyle(color: secondaryText, fontWeight: FontWeight.w600),
+        OTStyle.textStyle(color: secondaryText, fontWeight: FontWeight.w600),
       ),
     ),
-    dividerTheme: DividerThemeData(
-      color: border,
-      thickness: 1,
-    ),
+    dividerTheme: DividerThemeData(color: border, thickness: 1),
     cardTheme: CardThemeData(
       color: surface,
       elevation: 0,
@@ -144,7 +157,7 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: primaryText, width: 1.2),
       ),
-      hintStyle: TextStyle(color: secondaryText),
+      hintStyle: OTStyle.textStyle(color: secondaryText),
       prefixIconColor: secondaryText,
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -152,7 +165,7 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
         backgroundColor: primaryText,
         foregroundColor: inverseText,
         elevation: 0,
-        textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        textStyle: OTStyle.textStyle(fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     ),
@@ -166,14 +179,17 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: primaryText,
-        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        textStyle: OTStyle.textStyle(fontWeight: FontWeight.w600),
       ),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: mutedFill,
       side: BorderSide.none,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-      labelStyle: TextStyle(color: primaryText, fontWeight: FontWeight.w600),
+      labelStyle: OTStyle.textStyle(
+        color: primaryText,
+        fontWeight: FontWeight.w600,
+      ),
     ),
   );
 }

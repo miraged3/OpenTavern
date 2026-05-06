@@ -491,6 +491,9 @@ class ChatGenerationController extends Notifier<Set<String>> {
           )
           .listen(
             (event) async {
+              if (!_subscriptions.containsKey(conversation.id)) {
+                return;
+              }
               if (event.type == LlmStreamEventType.reasoningDelta) {
                 aggregatedReasoning += event.delta;
                 if (!loggedReasoningStart) {

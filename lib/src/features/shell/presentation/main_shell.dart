@@ -39,36 +39,55 @@ class MainShell extends StatelessWidget {
                 ),
                 child: SafeArea(
                   top: false,
-                  child: CupertinoTabBar(
-                    currentIndex: navigationShell.currentIndex,
-                    onTap: _onTap,
-                    backgroundColor: CupertinoColors.transparent,
-                    activeColor: colors.accent,
-                    inactiveColor: colors.tertiaryText,
-                    border: null,
-                    items: [
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.chat_bubble_2, size: 22),
-                        activeIcon: const Icon(
-                          CupertinoIcons.chat_bubble_2_fill,
-                          size: 22,
+                  child: CupertinoTheme(
+                    data: CupertinoTheme.of(context).copyWith(
+                      textTheme: CupertinoTheme.of(context).textTheme.copyWith(
+                        tabLabelTextStyle: OTStyle.textStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
                         ),
-                        label: context.l10n.navChat,
                       ),
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.person_crop_square, size: 22),
-                        activeIcon: const Icon(
-                          CupertinoIcons.person_crop_square_fill,
-                          size: 22,
+                    ),
+                    child: CupertinoTabBar(
+                      currentIndex: navigationShell.currentIndex,
+                      onTap: _onTap,
+                      backgroundColor: CupertinoColors.transparent,
+                      activeColor: colors.accent,
+                      inactiveColor: colors.tertiaryText,
+                      border: null,
+                      items: [
+                        BottomNavigationBarItem(
+                          icon: const Icon(
+                            CupertinoIcons.chat_bubble_2,
+                            size: 22,
+                          ),
+                          label: context.l10n.navChat,
+                          activeIcon: const Icon(
+                            CupertinoIcons.chat_bubble_2_fill,
+                            size: 22,
+                          ),
                         ),
-                        label: context.l10n.navCharacters,
-                      ),
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.sparkles, size: 22),
-                        activeIcon: const Icon(CupertinoIcons.sparkles, size: 22),
-                        label: context.l10n.navMore,
-                      ),
-                    ],
+                        BottomNavigationBarItem(
+                          icon: const Icon(
+                            CupertinoIcons.person_crop_square,
+                            size: 22,
+                          ),
+                          label: context.l10n.navCharacters,
+                          activeIcon: const Icon(
+                            CupertinoIcons.person_crop_square_fill,
+                            size: 22,
+                          ),
+                        ),
+                        BottomNavigationBarItem(
+                          icon: const Icon(CupertinoIcons.sparkles, size: 22),
+                          label: context.l10n.navMore,
+                          activeIcon: const Icon(
+                            CupertinoIcons.sparkles,
+                            size: 22,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

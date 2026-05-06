@@ -403,7 +403,10 @@ class _CharacterImportPreview extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _PreviewRow(label: context.l10n.name, value: character.name),
-          _PreviewRow(label: context.l10n.formatLabel, value: _formatLabel(context, character.sourceFormat)),
+          _PreviewRow(
+            label: context.l10n.formatLabel,
+            value: _formatLabel(context, character.sourceFormat),
+          ),
           _PreviewRow(
             label: context.l10n.authorLabel,
             value: character.creator?.trim().isNotEmpty == true
@@ -412,7 +415,9 @@ class _CharacterImportPreview extends StatelessWidget {
           ),
           _PreviewRow(
             label: context.l10n.tags,
-            value: character.tags.isEmpty ? context.l10n.none : character.tags.join(', '),
+            value: character.tags.isEmpty
+                ? context.l10n.none
+                : character.tags.join(', '),
           ),
           _PreviewRow(
             label: context.l10n.firstMessage,
@@ -432,7 +437,10 @@ class _CharacterImportPreview extends StatelessWidget {
           ),
           if (result.warnings.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(context.l10n.importReminder, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              context.l10n.importReminder,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 6),
             for (final warning in result.warnings)
               Padding(

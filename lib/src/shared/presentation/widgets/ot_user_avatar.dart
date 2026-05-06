@@ -32,8 +32,8 @@ class OTUserAvatar extends StatelessWidget {
     }
     final ImageProvider<Object>? fileImage =
         imagePath == null || imagePath.isEmpty
-            ? null
-            : FileImage(File(imagePath));
+        ? null
+        : FileImage(File(imagePath));
     final ImageProvider<Object>? imageProvider =
         fileImage ?? (imageBytes == null ? null : MemoryImage(imageBytes));
 

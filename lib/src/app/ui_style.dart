@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 @immutable
@@ -118,6 +119,16 @@ extension OTThemeContext on BuildContext {
 }
 
 abstract final class OTStyle {
+  static const _windowsFontFamily = 'Segoe UI';
+  static const _windowsFontFallback = <String>[
+    'Microsoft YaHei UI',
+    'Microsoft YaHei',
+    'Yu Gothic UI',
+    'Meiryo',
+    'Noto Sans CJK SC',
+    'sans-serif',
+  ];
+
   static OTThemeColors _activeColors = const OTThemeColors(
     pageBackground: Color(0xFFFAFAFA),
     surface: Colors.white,
@@ -142,6 +153,40 @@ abstract final class OTStyle {
   static const horizontalPadding = 16.0;
   static const cardRadius = 12.0;
   static const rowMinHeight = 52.0;
+
+  static bool get isWindows => defaultTargetPlatform == TargetPlatform.windows;
+  static String? get fontFamily => isWindows ? _windowsFontFamily : null;
+  static List<String>? get fontFamilyFallback =>
+      isWindows ? _windowsFontFallback : null;
+
+  static TextStyle textStyle({
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+    FontStyle? fontStyle,
+    double? height,
+    double? letterSpacing,
+    TextDecoration? decoration,
+  }) {
+    return TextStyle(
+      color: color,
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      fontStyle: fontStyle,
+      height: height,
+      letterSpacing: letterSpacing,
+      decoration: decoration,
+      fontFamily: fontFamily,
+      fontFamilyFallback: fontFamilyFallback,
+    );
+  }
+
+  static TextStyle withPlatformFont(TextStyle style) {
+    return style.copyWith(
+      fontFamily: style.fontFamily ?? fontFamily,
+      fontFamilyFallback: style.fontFamilyFallback ?? fontFamilyFallback,
+    );
+  }
 
   static void setActiveColors(OTThemeColors colors) {
     _activeColors = colors;

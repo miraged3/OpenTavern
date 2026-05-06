@@ -18,14 +18,14 @@ class OpenTavernApp extends ConsumerWidget {
     final languagePreference = ref.watch(languagePreferenceProvider);
     final lightTheme = buildOpenTavernTheme(brightness: Brightness.light);
     final darkTheme = buildOpenTavernTheme(brightness: Brightness.dark);
-    final platformBrightness =
-        View.of(context).platformDispatcher.platformBrightness;
+    final platformBrightness = View.of(
+      context,
+    ).platformDispatcher.platformBrightness;
     final effectiveTheme = switch (themeMode) {
       ThemeMode.light => lightTheme,
       ThemeMode.dark => darkTheme,
-      ThemeMode.system => platformBrightness == Brightness.dark
-          ? darkTheme
-          : lightTheme,
+      ThemeMode.system =>
+        platformBrightness == Brightness.dark ? darkTheme : lightTheme,
     };
     OTStyle.setActiveColors(effectiveTheme.extension<OTThemeColors>()!);
 
@@ -59,10 +59,7 @@ class OpenTavernApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en'),
-        Locale('zh'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('zh')],
       localeResolutionCallback: resolveLocale,
     );
   }

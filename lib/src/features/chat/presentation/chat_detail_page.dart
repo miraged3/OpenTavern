@@ -240,7 +240,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     );
 
     if (conversation == null) {
-      return Scaffold(body: Center(child: Text(context.l10n.conversationNotFound)));
+      return Scaffold(
+        body: Center(child: Text(context.l10n.conversationNotFound)),
+      );
     }
 
     final character = conversation.character;
@@ -295,7 +297,8 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
                 padding: const EdgeInsets.fromLTRB(0, 18, 0, 10),
                 itemCount: conversation.messages.length,
                 itemBuilder: (context, index) {
-                  final message = conversation.messages[conversation.messages.length - 1 - index];
+                  final message = conversation
+                      .messages[conversation.messages.length - 1 - index];
                   final isUser = message.role == MessageRole.user;
                   return _ChatMessageRow(
                     message: message,
@@ -621,16 +624,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     Conversation conversation,
     ChatMessage message,
   ) async {
-    final nextMessages = conversation.messages
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final nextMessages = source.messages
         .where((m) => m.id != message.id)
         .toList();
     final next = Conversation(
-      id: conversation.id,
-      character: conversation.character,
+      id: source.id,
+      character: source.character,
       messages: nextMessages,
-      userPersonaId: conversation.userPersonaId,
-      modelEndpointId: conversation.modelEndpointId,
-      generationConfig: conversation.generationConfig,
+      userPersonaId: source.userPersonaId,
+      modelEndpointId: source.modelEndpointId,
+      generationConfig: source.generationConfig,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -641,7 +646,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     ChatMessage message,
     String newContent,
   ) async {
-    final index = conversation.messages.indexWhere((m) => m.id == message.id);
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final index = source.messages.indexWhere((m) => m.id == message.id);
     if (index == -1) return;
 
     final editedMessage = ChatMessage(
@@ -653,23 +660,23 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
 
     if (message.role == MessageRole.user) {
       final defaultUserPersona = ref.read(defaultUserPersonaProvider);
-      final userPersona = conversation.userPersonaId == null
+      final userPersona = source.userPersonaId == null
           ? defaultUserPersona
-          : ref.read(userPersonaByIdProvider(conversation.userPersonaId!)) ??
+          : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
                 defaultUserPersona;
 
       final nextMessages = [
-        ...conversation.messages.sublist(0, index),
+        ...source.messages.sublist(0, index),
         editedMessage,
       ];
 
       final next = Conversation(
-        id: conversation.id,
-        character: conversation.character,
+        id: source.id,
+        character: source.character,
         messages: nextMessages,
-        userPersonaId: conversation.userPersonaId,
-        modelEndpointId: conversation.modelEndpointId,
-        generationConfig: conversation.generationConfig,
+        userPersonaId: source.userPersonaId,
+        modelEndpointId: source.modelEndpointId,
+        generationConfig: source.generationConfig,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -679,18 +686,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
           .generateReplyForConversation(next, userPersona: userPersona);
     } else {
       final nextMessages = [
-        ...conversation.messages.sublist(0, index),
+        ...source.messages.sublist(0, index),
         editedMessage,
-        ...conversation.messages.sublist(index + 1),
+        ...source.messages.sublist(index + 1),
       ];
 
       final next = Conversation(
-        id: conversation.id,
-        character: conversation.character,
+        id: source.id,
+        character: source.character,
         messages: nextMessages,
-        userPersonaId: conversation.userPersonaId,
-        modelEndpointId: conversation.modelEndpointId,
-        generationConfig: conversation.generationConfig,
+        userPersonaId: source.userPersonaId,
+        modelEndpointId: source.modelEndpointId,
+        generationConfig: source.generationConfig,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -701,23 +708,25 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     Conversation conversation,
     ChatMessage message,
   ) async {
-    final index = conversation.messages.indexWhere((m) => m.id == message.id);
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final index = source.messages.indexWhere((m) => m.id == message.id);
     if (index == -1) return;
 
     final defaultUserPersona = ref.read(defaultUserPersonaProvider);
-    final userPersona = conversation.userPersonaId == null
+    final userPersona = source.userPersonaId == null
         ? defaultUserPersona
-        : ref.read(userPersonaByIdProvider(conversation.userPersonaId!)) ??
+        : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
               defaultUserPersona;
 
-    final nextMessages = conversation.messages.sublist(0, index);
+    final nextMessages = source.messages.sublist(0, index);
     final next = Conversation(
-      id: conversation.id,
-      character: conversation.character,
+      id: source.id,
+      character: source.character,
       messages: nextMessages,
-      userPersonaId: conversation.userPersonaId,
-      modelEndpointId: conversation.modelEndpointId,
-      generationConfig: conversation.generationConfig,
+      userPersonaId: source.userPersonaId,
+      modelEndpointId: source.modelEndpointId,
+      generationConfig: source.generationConfig,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -725,6 +734,20 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     await ref
         .read(chatGenerationControllerProvider.notifier)
         .generateReplyForConversation(next, userPersona: userPersona);
+  }
+
+  Future<Conversation?> _cancelGenerationAndReadConversation(
+    String conversationId,
+  ) async {
+    final isGenerating = ref.read(
+      isConversationGeneratingProvider(conversationId),
+    );
+    if (isGenerating) {
+      await ref
+          .read(chatGenerationControllerProvider.notifier)
+          .cancelGeneration(conversationId);
+    }
+    return ref.read(conversationByIdProvider(conversationId));
   }
 
   void _showModelSelector(Conversation conversation) {
@@ -736,8 +759,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
       context: context,
       title: context.l10n.selectModel,
       values: models,
-      labelBuilder: (model) =>
-          model.id == selectedModelId ? '${model.name} · ${context.l10n.currentSelected}' : model.name,
+      labelBuilder: (model) => model.id == selectedModelId
+          ? '${model.name} · ${context.l10n.currentSelected}'
+          : model.name,
     ).then((model) async {
       if (model == null) {
         return;
@@ -1014,9 +1038,15 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
       title: context.l10n.messageActions,
       items: [
         if (widget.onCopy != null)
-          OtActionSheetItem(label: context.l10n.copy, onTap: () => widget.onCopy?.call()),
+          OtActionSheetItem(
+            label: context.l10n.copy,
+            onTap: () => widget.onCopy?.call(),
+          ),
         if (widget.onEdit != null)
-          OtActionSheetItem(label: context.l10n.edit, onTap: () => _showEditDialog(context)),
+          OtActionSheetItem(
+            label: context.l10n.edit,
+            onTap: () => _showEditDialog(context),
+          ),
         if (widget.onRegenerate != null)
           OtActionSheetItem(
             label: context.l10n.regenerate,
@@ -1038,7 +1068,10 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
       title: context.l10n.messageActions,
       items: [
         if (widget.onRetry != null)
-          OtActionSheetItem(label: context.l10n.retry, onTap: () => widget.onRetry?.call()),
+          OtActionSheetItem(
+            label: context.l10n.retry,
+            onTap: () => widget.onRetry?.call(),
+          ),
         if (widget.onDelete != null)
           OtActionSheetItem(
             label: context.l10n.delete,
@@ -1136,7 +1169,10 @@ class _AttachmentMenuGrid extends StatelessWidget {
                 _PrimaryToolCard(
                   icon: Icons.tune_rounded,
                   title: context.l10n.paramsLabel,
-                  subtitle: _configLabel(context, conversation.generationConfig),
+                  subtitle: _configLabel(
+                    context,
+                    conversation.generationConfig,
+                  ),
                   accentColor: colors.warning,
                   onTap: onEditGenerationConfig,
                 ),

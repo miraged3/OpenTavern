@@ -57,7 +57,15 @@ class _ChatHomePageState extends ConsumerState<ChatHomePage> {
           ),
           slivers: [
             CupertinoSliverNavigationBar(
-              largeTitle: Text(context.l10n.chatTitle),
+              largeTitle: Text(
+                context.l10n.chatTitle,
+                style: OTStyle.textStyle(
+                  color: context.otColors.primaryText,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                ),
+              ),
               trailing: _selectionMode
                   ? CupertinoButton(
                       padding: EdgeInsets.zero,
@@ -65,7 +73,7 @@ class _ChatHomePageState extends ConsumerState<ChatHomePage> {
                       onPressed: _exitSelectionMode,
                       child: Text(
                         context.l10n.done,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: OTStyle.textStyle(fontWeight: FontWeight.w600),
                       ),
                     )
                   : null,
@@ -223,7 +231,9 @@ class _ChatHomePageState extends ConsumerState<ChatHomePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.deleteConversation),
-        content: Text(context.l10n.deleteConversationConfirm(conversation.character.name)),
+        content: Text(
+          context.l10n.deleteConversationConfirm(conversation.character.name),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -505,10 +515,15 @@ class _ConversationBatchBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
-          _BatchPillButton(label: context.l10n.selectAll, onPressed: onSelectAll),
+          _BatchPillButton(
+            label: context.l10n.selectAll,
+            onPressed: onSelectAll,
+          ),
           const Spacer(),
           _BatchPillButton(
-            label: selectedCount == 0 ? context.l10n.delete : '${context.l10n.delete} $selectedCount',
+            label: selectedCount == 0
+                ? context.l10n.delete
+                : '${context.l10n.delete} $selectedCount',
             onPressed: onDelete,
             isDestructive: true,
           ),

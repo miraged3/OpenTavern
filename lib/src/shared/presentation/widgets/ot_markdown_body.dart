@@ -32,16 +32,15 @@ class OTMarkdownBody extends StatelessWidget {
     final resolvedTextColor = textColor ?? colors.primaryText;
 
     final baseStyle = compact
-        ? TextStyle(
-            fontSize: 14,
-            height: 1.4,
-            color: resolvedTextColor,
-          )
-        : TextStyle(
+        ? OTStyle.textStyle(fontSize: 14, height: 1.4, color: resolvedTextColor)
+        : OTStyle.textStyle(
             fontSize: 15,
             height: 1.45,
             color: resolvedTextColor,
           );
+    final emphasisStyle = OTStyle.isWindows
+        ? baseStyle.copyWith(fontWeight: FontWeight.w600)
+        : baseStyle.copyWith(fontStyle: FontStyle.italic);
 
     return MarkdownBody(
       data: data,
@@ -55,7 +54,7 @@ class OTMarkdownBody extends StatelessWidget {
           decoration: TextDecoration.underline,
         ),
         strong: baseStyle.copyWith(fontWeight: FontWeight.w700),
-        em: baseStyle.copyWith(fontStyle: FontStyle.italic),
+        em: emphasisStyle,
         code: baseStyle.copyWith(
           fontFamily: 'monospace',
           backgroundColor: codeBackgroundColor ?? colors.mutedFill,
@@ -68,23 +67,21 @@ class OTMarkdownBody extends StatelessWidget {
         blockquoteDecoration: BoxDecoration(
           color: blockquoteBackgroundColor ?? colors.quoteBackground,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: blockquoteBorderColor ?? colors.border,
-          ),
+          border: Border.all(color: blockquoteBorderColor ?? colors.border),
         ),
-        h1: TextStyle(
+        h1: OTStyle.textStyle(
           fontSize: 20,
           height: 1.3,
           fontWeight: FontWeight.w800,
           color: resolvedTextColor,
         ),
-        h2: TextStyle(
+        h2: OTStyle.textStyle(
           fontSize: 18,
           height: 1.3,
           fontWeight: FontWeight.w800,
           color: resolvedTextColor,
         ),
-        h3: TextStyle(
+        h3: OTStyle.textStyle(
           fontSize: 16,
           height: 1.3,
           fontWeight: FontWeight.w800,

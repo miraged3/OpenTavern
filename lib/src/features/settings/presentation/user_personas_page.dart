@@ -340,7 +340,13 @@ class _UserPersonaEditorPageState extends State<_UserPersonaEditorPage> {
     final colors = context.otColors;
     return Scaffold(
       backgroundColor: colors.pageBackground,
-      appBar: AppBar(title: Text(widget.existing == null ? context.l10n.addPersona : context.l10n.editPersona)),
+      appBar: AppBar(
+        title: Text(
+          widget.existing == null
+              ? context.l10n.addPersona
+              : context.l10n.editPersona,
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(0, 16, 0, 28),
         children: [
