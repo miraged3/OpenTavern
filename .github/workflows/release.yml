@@ -227,6 +227,27 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Delete existing release
+        uses: actions/github-script@v8
+        with:
+          script: |
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: context.ref.replace('refs/tags/', ''),
+              });
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+            }
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
