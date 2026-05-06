@@ -207,11 +207,15 @@ jobs:
           flutter gen-l10n
 
       - name: Build Windows ARM64
-        run: flutter build windows --release
+        run: flutter build windows --release --target-platform windows-arm64
 
       - name: Prepare Windows ARM64 artifact
         shell: powershell
         run: |
+          if (!(Test-Path "build/windows/arm64/runner/Release/open_tavern.exe")) {
+            Get-ChildItem -Path "build/windows" -Recurse -Filter "open_tavern.exe" | Select-Object -ExpandProperty FullName
+            throw "Windows ARM64 build output was not found under build/windows/arm64."
+          }
           New-Item -ItemType Directory -Force -Path "release/OpenTavern-${{ github.ref_name }}-windows-arm64"
           Copy-Item -Path "build/windows/arm64/runner/Release/*" -Destination "release/OpenTavern-${{ github.ref_name }}-windows-arm64" -Recurse -Force
 
