@@ -7,16 +7,21 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
 
+env:
+  FLUTTER_VERSION: '3.41.7'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -45,20 +50,23 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk release/OpenTavern-${{ github.ref_name }}-android.apk
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android
           path: release/*.apk
+          archive: false
+          if-no-files-found: error
 
   build-linux-x64:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -75,27 +83,29 @@ jobs:
       - name: Build Linux x64
         run: flutter build linux --release --target-platform linux-x64
 
-      - name: Archive Linux x64
+      - name: Prepare Linux x64 artifact
         run: |
-          mkdir -p release
-          cd build/linux/x64/release/bundle
-          tar czf ../../../../../release/OpenTavern-${{ github.ref_name }}-linux-x64.tar.gz .
+          mkdir -p release/OpenTavern-${{ github.ref_name }}-linux-x64
+          cp -a build/linux/x64/release/bundle/. release/OpenTavern-${{ github.ref_name }}-linux-x64/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-x64
-          path: release/*.tar.gz
+          path: release/OpenTavern-${{ github.ref_name }}-linux-x64/
+          compression-level: 0
+          if-no-files-found: error
 
   build-linux-arm64:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -112,27 +122,29 @@ jobs:
       - name: Build Linux ARM64
         run: flutter build linux --release --target-platform linux-arm64
 
-      - name: Archive Linux ARM64
+      - name: Prepare Linux ARM64 artifact
         run: |
-          mkdir -p release
-          cd build/linux/arm64/release/bundle
-          tar czf ../../../../../release/OpenTavern-${{ github.ref_name }}-linux-arm64.tar.gz .
+          mkdir -p release/OpenTavern-${{ github.ref_name }}-linux-arm64
+          cp -a build/linux/arm64/release/bundle/. release/OpenTavern-${{ github.ref_name }}-linux-arm64/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-arm64
-          path: release/*.tar.gz
+          path: release/OpenTavern-${{ github.ref_name }}-linux-arm64/
+          compression-level: 0
+          if-no-files-found: error
 
   build-windows-x64:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -144,27 +156,30 @@ jobs:
       - name: Build Windows x64
         run: flutter build windows --release
 
-      - name: Archive Windows x64
+      - name: Prepare Windows x64 artifact
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path release
-          Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "release/OpenTavern-${{ github.ref_name }}-windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path "release/OpenTavern-${{ github.ref_name }}-windows-x64"
+          Copy-Item -Path "build/windows/x64/runner/Release/*" -Destination "release/OpenTavern-${{ github.ref_name }}-windows-x64" -Recurse -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-x64
-          path: release/*.zip
+          path: release/OpenTavern-${{ github.ref_name }}-windows-x64/
+          compression-level: 0
+          if-no-files-found: error
 
   build-windows-arm64:
     runs-on: windows-11-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -176,27 +191,30 @@ jobs:
       - name: Build Windows ARM64
         run: flutter build windows --release
 
-      - name: Archive Windows ARM64
+      - name: Prepare Windows ARM64 artifact
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path release
-          Compress-Archive -Path "build/windows/arm64/runner/Release/*" -DestinationPath "release/OpenTavern-${{ github.ref_name }}-windows-arm64.zip"
+          New-Item -ItemType Directory -Force -Path "release/OpenTavern-${{ github.ref_name }}-windows-arm64"
+          Copy-Item -Path "build/windows/arm64/runner/Release/*" -Destination "release/OpenTavern-${{ github.ref_name }}-windows-arm64" -Recurse -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-arm64
-          path: release/*.zip
+          path: release/OpenTavern-${{ github.ref_name }}-windows-arm64/
+          compression-level: 0
+          if-no-files-found: error
 
   build-macos:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 
@@ -208,17 +226,18 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release
 
-      - name: Archive macOS
+      - name: Prepare macOS artifact
         run: |
           mkdir -p release
-          cd build/macos/Build/Products/Release
-          zip -r ../../../../../release/OpenTavern-${{ github.ref_name }}-macos.zip OpenTavern.app
+          cp -a build/macos/Build/Products/Release/OpenTavern.app release/OpenTavern-${{ github.ref_name }}-macos.app
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos
-          path: release/*.zip
+          path: release/OpenTavern-${{ github.ref_name }}-macos.app/
+          compression-level: 0
+          if-no-files-found: error
 
   release:
     needs: [build-android, build-linux-x64, build-linux-arm64, build-windows-x64, build-windows-arm64, build-macos]
@@ -228,7 +247,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
           merge-multiple: true
@@ -236,7 +255,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
+          files: artifacts/**
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
