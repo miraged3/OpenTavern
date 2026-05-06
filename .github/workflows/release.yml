@@ -203,13 +203,13 @@ jobs:
         run: |
           mkdir -p release
           cp -a build/macos/Build/Products/Release/OpenTavern.app release/OpenTavern-${{ github.ref_name }}-macos.app
+          ditto -c -k --sequesterRsrc --keepParent release/OpenTavern-${{ github.ref_name }}-macos.app release/OpenTavern-${{ github.ref_name }}-macos.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: OpenTavern-${{ github.ref_name }}-macos-app
-          path: release/OpenTavern-${{ github.ref_name }}-macos.app/
-          compression-level: 0
+          name: OpenTavern-${{ github.ref_name }}-macos
+          path: release/OpenTavern-${{ github.ref_name }}-macos.zip
           if-no-files-found: error
 
   release:
