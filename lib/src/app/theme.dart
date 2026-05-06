@@ -1,6 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'ui_style.dart';
+
+const _windowsFontFamily = 'Segoe UI';
+const _windowsFontFallback = <String>[
+  'Microsoft YaHei UI',
+  'Microsoft YaHei',
+  'Yu Gothic UI',
+  'Meiryo',
+  'Noto Sans CJK SC',
+  'sans-serif',
+];
 
 ThemeData buildOpenTavernTheme({required Brightness brightness}) {
   const primary = Color(0xFF111111);
@@ -27,10 +38,20 @@ ThemeData buildOpenTavernTheme({required Brightness brightness}) {
     brightness: brightness,
     surface: surface,
   );
-  final baseTheme = ThemeData(colorScheme: scheme, useMaterial3: true);
+  final isWindows = defaultTargetPlatform == TargetPlatform.windows;
+  final fontFamily = isWindows ? _windowsFontFamily : null;
+  final fontFamilyFallback = isWindows ? _windowsFontFallback : null;
+  final baseTheme = ThemeData(
+    colorScheme: scheme,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    useMaterial3: true,
+  );
   final textTheme = baseTheme.textTheme.apply(
     bodyColor: primaryText,
     displayColor: primaryText,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
   );
 
   return baseTheme.copyWith(
