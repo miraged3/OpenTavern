@@ -54,7 +54,6 @@ jobs:
         with:
           name: android
           path: release/*.apk
-          archive: false
           if-no-files-found: error
 
   build-linux-x64:
