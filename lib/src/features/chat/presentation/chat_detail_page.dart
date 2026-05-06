@@ -1086,29 +1086,102 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final controller = TextEditingController(text: widget.message.content);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.editMessage),
-        content: TextField(
-          controller: controller,
-          maxLines: 5,
-          minLines: 1,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.cancel),
+      builder: (context) {
+        final colors = context.otColors;
+        final size = MediaQuery.sizeOf(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 28,
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onEdit?.call(controller.text);
-            },
-            style: FilledButton.styleFrom(shape: const StadiumBorder()),
-            child: Text(context.l10n.save),
+          backgroundColor: colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: colors.border),
           ),
-        ],
-      ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 720,
+              maxHeight: size.height * 0.82,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.editMessage,
+                    style: OTStyle.textStyle(
+                      color: colors.primaryText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: TextField(
+                      controller: controller,
+                      autofocus: true,
+                      expands: true,
+                      maxLines: null,
+                      minLines: null,
+                      textAlignVertical: TextAlignVertical.top,
+                      keyboardType: TextInputType.multiline,
+                      style: OTStyle.textStyle(
+                        color: colors.primaryText,
+                        fontSize: 15,
+                        height: 1.45,
+                      ),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: colors.mutedFill,
+                        contentPadding: const EdgeInsets.all(14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: colors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: colors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: colors.primaryText,
+                            width: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(context.l10n.cancel),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onEdit?.call(controller.text);
+                        },
+                        style: FilledButton.styleFrom(
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(context.l10n.save),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 
 import '../../models/chat_message.dart';
@@ -8,11 +5,12 @@ import '../../models/generation_config.dart';
 import '../llm_provider.dart';
 import '../llm_stream_event.dart';
 import 'endpoint_format_helpers.dart';
+import 'streaming_helpers.dart';
 
 class AnthropicMessagesProvider extends LlmProvider {
   AnthropicMessagesProvider(super.config)
     : _dio = Dio(
-        BaseOptions(
+        llmBaseOptions(
           baseUrl: config.baseUrl,
           headers: {
             if ((config.apiKey ?? '').isNotEmpty) 'x-api-key': config.apiKey,
@@ -97,25 +95,7 @@ class AnthropicMessagesProvider extends LlmProvider {
       return;
     }
 
-    await for (final line
-        in utf8.decoder
-            .bind(responseBody.stream)
-            .transform(const LineSplitter())) {
-      final trimmed = line.trim();
-      if (!trimmed.startsWith('data:')) {
-        continue;
-      }
-
-      final payload = trimmed.substring(5).trim();
-      if (payload.isEmpty) {
-        continue;
-      }
-
-      final decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) {
-        continue;
-      }
-
+    await for (final decoded in decodeSseJson(responseBody)) {
       if (decoded['type'] != 'content_block_delta') {
         continue;
       }

@@ -623,14 +623,28 @@ class ChatGenerationController extends Notifier<Set<String>> {
   ) async {
     final current = ref.read(conversationByIdProvider(conversationId));
     if (current != null) {
+      var keptPartialReply = false;
+      final nextMessages = <ChatMessage>[];
+      for (final item in current.messages) {
+        if (item.id != assistantMessageId) {
+          nextMessages.add(item);
+          continue;
+        }
+        if (item.content.trim().isNotEmpty ||
+            item.reasoning.trim().isNotEmpty) {
+          nextMessages.add(item.copyWith(isPending: false));
+          keptPartialReply = true;
+        }
+      }
       final nextConversation = current.copyWith(
-        messages: current.messages
-            .where((item) => item.id != assistantMessageId)
-            .toList(),
+        messages: nextMessages,
         updatedAt: DateTime.now(),
       );
       await _replaceConversation(nextConversation);
-      await _appendSystemMessage(nextConversation, 'system_send_failed');
+      await _appendSystemMessage(
+        nextConversation,
+        keptPartialReply ? 'system_interrupted' : 'system_send_failed',
+      );
     }
     await ref
         .read(appLogsProvider.notifier)

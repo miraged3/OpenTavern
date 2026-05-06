@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 
 import '../../models/chat_message.dart';
@@ -9,14 +6,13 @@ import '../../models/provider_config.dart';
 import '../llm_provider.dart';
 import '../llm_stream_event.dart';
 import 'endpoint_format_helpers.dart';
+import 'streaming_helpers.dart';
 
 class OpenAiCompatibleProvider extends LlmProvider {
   OpenAiCompatibleProvider(super.config)
     : _dio = Dio(
-        BaseOptions(
+        llmBaseOptions(
           baseUrl: config.baseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
           headers: {
             if ((config.apiKey ?? '').isNotEmpty)
               'Authorization': 'Bearer ${config.apiKey}',
@@ -172,25 +168,7 @@ class OpenAiCompatibleProvider extends LlmProvider {
       return;
     }
 
-    await for (final line
-        in utf8.decoder
-            .bind(responseBody.stream)
-            .transform(const LineSplitter())) {
-      final trimmed = line.trim();
-      if (!trimmed.startsWith('data:')) {
-        continue;
-      }
-
-      final payload = trimmed.substring(5).trim();
-      if (payload.isEmpty || payload == '[DONE]') {
-        continue;
-      }
-
-      final decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) {
-        continue;
-      }
-
+    await for (final decoded in decodeSseJson(responseBody)) {
       final choices = decoded['choices'];
       if (choices is! List || choices.isEmpty) {
         continue;

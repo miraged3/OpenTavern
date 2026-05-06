@@ -1,17 +1,15 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 
 import '../../models/chat_message.dart';
 import '../../models/generation_config.dart';
 import '../llm_provider.dart';
 import '../llm_stream_event.dart';
+import 'streaming_helpers.dart';
 
 class OpenAiResponsesProvider extends LlmProvider {
   OpenAiResponsesProvider(super.config)
     : _dio = Dio(
-        BaseOptions(
+        llmBaseOptions(
           baseUrl: config.baseUrl,
           headers: {
             if ((config.apiKey ?? '').isNotEmpty)
@@ -82,25 +80,7 @@ class OpenAiResponsesProvider extends LlmProvider {
       return;
     }
 
-    await for (final line
-        in utf8.decoder
-            .bind(responseBody.stream)
-            .transform(const LineSplitter())) {
-      final trimmed = line.trim();
-      if (!trimmed.startsWith('data:')) {
-        continue;
-      }
-
-      final payload = trimmed.substring(5).trim();
-      if (payload.isEmpty || payload == '[DONE]') {
-        continue;
-      }
-
-      final decoded = jsonDecode(payload);
-      if (decoded is! Map<String, dynamic>) {
-        continue;
-      }
-
+    await for (final decoded in decodeSseJson(responseBody)) {
       final type = decoded['type'];
       if (type == 'response.output_text.delta') {
         final delta = decoded['delta'];
