@@ -86,12 +86,13 @@ jobs:
         run: |
           mkdir -p release/OpenTavern-${{ github.ref_name }}-linux-x64
           cp -a build/linux/x64/release/bundle/. release/OpenTavern-${{ github.ref_name }}-linux-x64/
+          tar -czf release/OpenTavern-${{ github.ref_name }}-linux-x64.tar.gz -C release OpenTavern-${{ github.ref_name }}-linux-x64
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: OpenTavern-${{ github.ref_name }}-linux-x64-bundle
-          path: release/OpenTavern-${{ github.ref_name }}-linux-x64/
+          path: release/OpenTavern-${{ github.ref_name }}-linux-x64.tar.gz
           compression-level: 0
           if-no-files-found: error
 
@@ -126,12 +127,13 @@ jobs:
         run: |
           mkdir -p release/OpenTavern-${{ github.ref_name }}-linux-arm64
           cp -a build/linux/arm64/release/bundle/. release/OpenTavern-${{ github.ref_name }}-linux-arm64/
+          tar -czf release/OpenTavern-${{ github.ref_name }}-linux-arm64.tar.gz -C release OpenTavern-${{ github.ref_name }}-linux-arm64
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: OpenTavern-${{ github.ref_name }}-linux-arm64-bundle
-          path: release/OpenTavern-${{ github.ref_name }}-linux-arm64/
+          path: release/OpenTavern-${{ github.ref_name }}-linux-arm64.tar.gz
           compression-level: 0
           if-no-files-found: error
 
@@ -168,12 +170,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path "release/OpenTavern-${{ github.ref_name }}-windows-x64"
           Copy-Item -Path "build/windows/x64/runner/Release/*" -Destination "release/OpenTavern-${{ github.ref_name }}-windows-x64" -Recurse -Force
+          Compress-Archive -Path "release/OpenTavern-${{ github.ref_name }}-windows-x64" -DestinationPath "release/OpenTavern-${{ github.ref_name }}-windows-x64.zip" -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: OpenTavern-${{ github.ref_name }}-windows-x64-bundle
-          path: release/OpenTavern-${{ github.ref_name }}-windows-x64/
+          path: release/OpenTavern-${{ github.ref_name }}-windows-x64.zip
           compression-level: 0
           if-no-files-found: error
 
@@ -227,7 +230,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**
+          files: |
+            artifacts/*.apk
+            artifacts/*.zip
+            artifacts/*.tar.gz
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
