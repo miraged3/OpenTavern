@@ -952,10 +952,13 @@ class ModelEndpointsNotifier extends Notifier<List<ModelEndpoint>> {
   }
 
   Future<void> upsert(ModelEndpoint model) async {
+    final nextModel = state.isEmpty
+        ? model.copyWith(isDefault: true, isEnabled: true)
+        : model;
     final next = _normalizeDefaultModels([
-      model,
+      nextModel,
       for (final item in state)
-        if (item.id != model.id) item,
+        if (item.id != nextModel.id) item,
     ]);
     await _setState(next);
   }
