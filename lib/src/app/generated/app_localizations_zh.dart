@@ -69,6 +69,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get disable => '停用';
 
   @override
+  String get confirmExitTitle => '退出 OpenTavern？';
+
+  @override
+  String get confirmExitMessage => '确定要退出 OpenTavern 吗？';
+
+  @override
+  String get confirmExitAction => '退出';
+
+  @override
   String get defaultBadge => '默认';
 
   @override
@@ -602,6 +611,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get aboutOpenTavern => '关于 OpenTavern';
+
+  @override
+  String get aboutOpenTavernDescription => 'OpenTavern 是一个移动优先的开源角色聊天客户端';
+
+  @override
+  String get aboutOpenTavernRepository =>
+      'https://github.com/miraged3/OpenTavern';
 
   @override
   String get currentSelected => '当前';

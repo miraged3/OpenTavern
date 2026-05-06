@@ -10,6 +10,7 @@ class Conversation {
     required this.userPersonaId,
     this.modelEndpointId,
     this.generationConfig,
+    this.activeLeafMessageId,
     required this.updatedAt,
   });
 
@@ -19,6 +20,7 @@ class Conversation {
   final String? userPersonaId;
   final String? modelEndpointId;
   final GenerationConfig? generationConfig;
+  final String? activeLeafMessageId;
   final DateTime updatedAt;
 
   Conversation copyWith({
@@ -28,6 +30,7 @@ class Conversation {
     String? userPersonaId,
     String? modelEndpointId,
     Object? generationConfig = _unset,
+    Object? activeLeafMessageId = _unset,
     DateTime? updatedAt,
   }) {
     return Conversation(
@@ -39,6 +42,9 @@ class Conversation {
       generationConfig: generationConfig == _unset
           ? this.generationConfig
           : generationConfig as GenerationConfig?,
+      activeLeafMessageId: activeLeafMessageId == _unset
+          ? this.activeLeafMessageId
+          : activeLeafMessageId as String?,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -62,6 +68,7 @@ class Conversation {
               Map<String, dynamic>.from(json['generationConfig'] as Map),
             )
           : null,
+      activeLeafMessageId: json['activeLeafMessageId'] as String?,
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
@@ -74,6 +81,7 @@ class Conversation {
       'userPersonaId': userPersonaId,
       'modelEndpointId': modelEndpointId,
       'generationConfig': generationConfig?.toJson(),
+      'activeLeafMessageId': activeLeafMessageId,
       'updatedAt': updatedAt.toIso8601String(),
     };
   }

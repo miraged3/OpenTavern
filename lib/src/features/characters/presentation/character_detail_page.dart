@@ -39,7 +39,9 @@ class CharacterDetailPage extends ConsumerWidget {
         title: Text(context.l10n.characterPreview),
         actions: [
           IconButton(
-            tooltip: character.isFavorite ? context.l10n.unfavorite : context.l10n.favorite,
+            tooltip: character.isFavorite
+                ? context.l10n.unfavorite
+                : context.l10n.favorite,
             onPressed: () => ref
                 .read(charactersProvider.notifier)
                 .toggleFavorite(character.id),
@@ -85,7 +87,9 @@ class CharacterDetailPage extends ConsumerWidget {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: Text(context.l10n.deleteCharacter),
-                      content: Text(context.l10n.deleteCharacterConfirm(character.name)),
+                      content: Text(
+                        context.l10n.deleteCharacterConfirm(character.name),
+                      ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
@@ -188,9 +192,18 @@ class CharacterDetailPage extends ConsumerWidget {
             description: context.l10n.characterSettingsDesc,
             child: _InfoGroup(
               children: [
-                _InfoRow(title: context.l10n.description, value: character.description),
-                _InfoRow(title: context.l10n.personality, value: character.personality),
-                _InfoRow(title: context.l10n.scenario, value: character.scenario),
+                _InfoRow(
+                  title: context.l10n.description,
+                  value: character.description,
+                ),
+                _InfoRow(
+                  title: context.l10n.personality,
+                  value: character.personality,
+                ),
+                _InfoRow(
+                  title: context.l10n.scenario,
+                  value: character.scenario,
+                ),
               ],
             ),
           ),
@@ -200,7 +213,10 @@ class CharacterDetailPage extends ConsumerWidget {
             description: context.l10n.dialogueMaterialsDesc,
             child: _InfoGroup(
               children: [
-                _InfoRow(title: context.l10n.firstMessage, value: character.firstMessage),
+                _InfoRow(
+                  title: context.l10n.firstMessage,
+                  value: character.firstMessage,
+                ),
                 if (character.alternateGreetings.isNotEmpty)
                   _InfoRow(
                     title: context.l10n.alternateGreetings,
@@ -219,8 +235,14 @@ class CharacterDetailPage extends ConsumerWidget {
               description: context.l10n.extendedInfoDesc,
               child: _InfoGroup(
                 children: [
-                  _InfoRow(title: context.l10n.creatorNotes, value: character.creatorNotes ?? ''),
-                  _InfoRow(title: context.l10n.systemPrompt, value: character.systemPrompt ?? ''),
+                  _InfoRow(
+                    title: context.l10n.creatorNotes,
+                    value: character.creatorNotes ?? '',
+                  ),
+                  _InfoRow(
+                    title: context.l10n.systemPrompt,
+                    value: character.systemPrompt ?? '',
+                  ),
                   _InfoRow(
                     title: context.l10n.postHistoryInstructions,
                     value: character.postHistoryInstructions ?? '',

@@ -218,6 +218,24 @@ abstract class AppLocalizations {
   /// **'Disable'**
   String get disable;
 
+  /// No description provided for @confirmExitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit OpenTavern?'**
+  String get confirmExitTitle;
+
+  /// No description provided for @confirmExitMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to exit OpenTavern?'**
+  String get confirmExitMessage;
+
+  /// No description provided for @confirmExitAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get confirmExitAction;
+
   /// No description provided for @defaultBadge.
   ///
   /// In en, this message translates to:
@@ -1225,6 +1243,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About OpenTavern'**
   String get aboutOpenTavern;
+
+  /// No description provided for @aboutOpenTavernDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenTavern is an open-source, mobile-first character chat client.'**
+  String get aboutOpenTavernDescription;
+
+  /// No description provided for @aboutOpenTavernRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'https://github.com/miraged3/OpenTavern'**
+  String get aboutOpenTavernRepository;
 
   /// No description provided for @currentSelected.
   ///

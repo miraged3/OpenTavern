@@ -11,6 +11,7 @@ import '../../../core/llm/character_prompt_builder.dart';
 import '../../../core/models/character.dart';
 import '../../../core/models/chat_message.dart';
 import '../../../core/models/conversation.dart';
+import '../../../core/models/conversation_tree.dart';
 import '../../../core/models/generation_config.dart';
 import '../../../core/models/model_endpoint.dart';
 import '../../../core/models/user_persona.dart';
@@ -240,7 +241,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     );
 
     if (conversation == null) {
-      return Scaffold(body: Center(child: Text(context.l10n.conversationNotFound)));
+      return Scaffold(
+        body: Center(child: Text(context.l10n.conversationNotFound)),
+      );
     }
 
     final character = conversation.character;
@@ -258,7 +261,8 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     final composerBottomInset = _keyboardHeight > bottomSafeInset
         ? _keyboardHeight
         : bottomSafeInset;
-    final messageCount = conversation.messages.length;
+    final visibleMessages = activeConversationPath(conversation);
+    final messageCount = visibleMessages.length;
     final shouldAutoScroll =
         !_hasAlignedInitialScroll ||
         (messageCount > _lastMessageCount && _isNearBottom()) ||
@@ -293,12 +297,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
                 controller: _messagesScrollController,
                 reverse: true,
                 padding: const EdgeInsets.fromLTRB(0, 18, 0, 10),
-                itemCount: conversation.messages.length,
+                itemCount: visibleMessages.length,
                 itemBuilder: (context, index) {
-                  final message = conversation.messages[conversation.messages.length - 1 - index];
+                  final message =
+                      visibleMessages[visibleMessages.length - 1 - index];
                   final isUser = message.role == MessageRole.user;
+                  final siblingInfo = siblingInfoForMessage(
+                    conversation,
+                    message.id,
+                  );
                   return _ChatMessageRow(
                     message: message,
+                    siblingInfo: siblingInfo,
                     character: character,
                     userPersona: userPersona,
                     onRetry:
@@ -322,6 +332,18 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
                     onRegenerate: !isUser
                         ? () => _regenerateFromMessage(conversation, message)
                         : null,
+                    onPreviousSibling: siblingInfo.previousMessageId == null
+                        ? null
+                        : () => _selectSibling(
+                            conversation,
+                            siblingInfo.previousMessageId!,
+                          ),
+                    onNextSibling: siblingInfo.nextMessageId == null
+                        ? null
+                        : () => _selectSibling(
+                            conversation,
+                            siblingInfo.nextMessageId!,
+                          ),
                   );
                 },
               ),
@@ -621,16 +643,28 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     Conversation conversation,
     ChatMessage message,
   ) async {
-    final nextMessages = conversation.messages
-        .where((m) => m.id != message.id)
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final deletedIds = {
+      message.id,
+      for (final descendant in descendantsOfMessage(source, message.id))
+        descendant.id,
+    };
+    final nextMessages = source.messages
+        .where((m) => !deletedIds.contains(m.id))
         .toList();
+    final fallbackLeafId = replacementLeafAfterDeletingMessage(
+      source,
+      message.id,
+    );
     final next = Conversation(
-      id: conversation.id,
-      character: conversation.character,
+      id: source.id,
+      character: source.character,
       messages: nextMessages,
-      userPersonaId: conversation.userPersonaId,
-      modelEndpointId: conversation.modelEndpointId,
-      generationConfig: conversation.generationConfig,
+      userPersonaId: source.userPersonaId,
+      modelEndpointId: source.modelEndpointId,
+      generationConfig: source.generationConfig,
+      activeLeafMessageId: fallbackLeafId,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -641,35 +675,37 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     ChatMessage message,
     String newContent,
   ) async {
-    final index = conversation.messages.indexWhere((m) => m.id == message.id);
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final index = source.messages.indexWhere((m) => m.id == message.id);
     if (index == -1) return;
 
-    final editedMessage = ChatMessage(
-      id: message.id,
-      role: message.role,
-      content: newContent,
-      timestamp: DateTime.now(),
-    );
+    final now = DateTime.now();
 
     if (message.role == MessageRole.user) {
+      final editedMessage = ChatMessage(
+        id: 'msg-${now.microsecondsSinceEpoch}',
+        role: message.role,
+        content: newContent,
+        timestamp: now,
+        parentId: message.parentId,
+      );
       final defaultUserPersona = ref.read(defaultUserPersonaProvider);
-      final userPersona = conversation.userPersonaId == null
+      final userPersona = source.userPersonaId == null
           ? defaultUserPersona
-          : ref.read(userPersonaByIdProvider(conversation.userPersonaId!)) ??
+          : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
                 defaultUserPersona;
 
-      final nextMessages = [
-        ...conversation.messages.sublist(0, index),
-        editedMessage,
-      ];
+      final nextMessages = [...source.messages, editedMessage];
 
       final next = Conversation(
-        id: conversation.id,
-        character: conversation.character,
+        id: source.id,
+        character: source.character,
         messages: nextMessages,
-        userPersonaId: conversation.userPersonaId,
-        modelEndpointId: conversation.modelEndpointId,
-        generationConfig: conversation.generationConfig,
+        userPersonaId: source.userPersonaId,
+        modelEndpointId: source.modelEndpointId,
+        generationConfig: source.generationConfig,
+        activeLeafMessageId: editedMessage.id,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -678,19 +714,25 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
           .read(chatGenerationControllerProvider.notifier)
           .generateReplyForConversation(next, userPersona: userPersona);
     } else {
+      final editedMessage = message.copyWith(
+        content: newContent,
+        timestamp: now,
+        isPending: false,
+      );
       final nextMessages = [
-        ...conversation.messages.sublist(0, index),
+        ...source.messages.sublist(0, index),
         editedMessage,
-        ...conversation.messages.sublist(index + 1),
+        ...source.messages.sublist(index + 1),
       ];
 
       final next = Conversation(
-        id: conversation.id,
-        character: conversation.character,
+        id: source.id,
+        character: source.character,
         messages: nextMessages,
-        userPersonaId: conversation.userPersonaId,
-        modelEndpointId: conversation.modelEndpointId,
-        generationConfig: conversation.generationConfig,
+        userPersonaId: source.userPersonaId,
+        modelEndpointId: source.modelEndpointId,
+        generationConfig: source.generationConfig,
+        activeLeafMessageId: source.activeLeafMessageId,
         updatedAt: DateTime.now(),
       );
       await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -701,23 +743,25 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     Conversation conversation,
     ChatMessage message,
   ) async {
-    final index = conversation.messages.indexWhere((m) => m.id == message.id);
+    final current = await _cancelGenerationAndReadConversation(conversation.id);
+    final source = current ?? conversation;
+    final index = source.messages.indexWhere((m) => m.id == message.id);
     if (index == -1) return;
 
     final defaultUserPersona = ref.read(defaultUserPersonaProvider);
-    final userPersona = conversation.userPersonaId == null
+    final userPersona = source.userPersonaId == null
         ? defaultUserPersona
-        : ref.read(userPersonaByIdProvider(conversation.userPersonaId!)) ??
+        : ref.read(userPersonaByIdProvider(source.userPersonaId!)) ??
               defaultUserPersona;
 
-    final nextMessages = conversation.messages.sublist(0, index);
     final next = Conversation(
-      id: conversation.id,
-      character: conversation.character,
-      messages: nextMessages,
-      userPersonaId: conversation.userPersonaId,
-      modelEndpointId: conversation.modelEndpointId,
-      generationConfig: conversation.generationConfig,
+      id: source.id,
+      character: source.character,
+      messages: source.messages,
+      userPersonaId: source.userPersonaId,
+      modelEndpointId: source.modelEndpointId,
+      generationConfig: source.generationConfig,
+      activeLeafMessageId: message.parentId,
       updatedAt: DateTime.now(),
     );
     await ref.read(conversationsProvider.notifier).replaceConversation(next);
@@ -725,6 +769,32 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
     await ref
         .read(chatGenerationControllerProvider.notifier)
         .generateReplyForConversation(next, userPersona: userPersona);
+  }
+
+  Future<void> _selectSibling(
+    Conversation conversation,
+    String messageId,
+  ) async {
+    final leafId = latestDescendantLeafId(conversation, messageId);
+    final next = conversation.copyWith(
+      activeLeafMessageId: leafId,
+      updatedAt: DateTime.now(),
+    );
+    await ref.read(conversationsProvider.notifier).replaceConversation(next);
+  }
+
+  Future<Conversation?> _cancelGenerationAndReadConversation(
+    String conversationId,
+  ) async {
+    final isGenerating = ref.read(
+      isConversationGeneratingProvider(conversationId),
+    );
+    if (isGenerating) {
+      await ref
+          .read(chatGenerationControllerProvider.notifier)
+          .cancelGeneration(conversationId);
+    }
+    return ref.read(conversationByIdProvider(conversationId));
   }
 
   void _showModelSelector(Conversation conversation) {
@@ -736,8 +806,9 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
       context: context,
       title: context.l10n.selectModel,
       values: models,
-      labelBuilder: (model) =>
-          model.id == selectedModelId ? '${model.name} · ${context.l10n.currentSelected}' : model.name,
+      labelBuilder: (model) => model.id == selectedModelId
+          ? '${model.name} · ${context.l10n.currentSelected}'
+          : model.name,
     ).then((model) async {
       if (model == null) {
         return;
@@ -779,6 +850,7 @@ class _ChatDetailPageState extends ConsumerState<ChatDetailPage>
 class _ChatMessageRow extends StatefulWidget {
   const _ChatMessageRow({
     required this.message,
+    required this.siblingInfo,
     required this.character,
     required this.userPersona,
     this.onRetry,
@@ -786,9 +858,12 @@ class _ChatMessageRow extends StatefulWidget {
     this.onDelete,
     this.onEdit,
     this.onRegenerate,
+    this.onPreviousSibling,
+    this.onNextSibling,
   });
 
   final ChatMessage message;
+  final MessageSiblingInfo siblingInfo;
   final Character character;
   final UserPersona userPersona;
   final VoidCallback? onRetry;
@@ -796,6 +871,8 @@ class _ChatMessageRow extends StatefulWidget {
   final VoidCallback? onDelete;
   final ValueChanged<String>? onEdit;
   final VoidCallback? onRegenerate;
+  final VoidCallback? onPreviousSibling;
+  final VoidCallback? onNextSibling;
 
   @override
   State<_ChatMessageRow> createState() => _ChatMessageRowState();
@@ -864,6 +941,10 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final hasReasoning = message.reasoning.trim().isNotEmpty;
     final isTypingIndicator =
         !isUser && message.isPending && renderedContent.trim().isEmpty;
+    final maxBubbleWidth = math.min(
+      MediaQuery.sizeOf(context).width * 0.78,
+      560.0,
+    );
 
     final Widget avatar = GestureDetector(
       onTap: () {
@@ -914,7 +995,7 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
                     scale: _isPressed ? 0.96 : 1.0,
                     duration: const Duration(milliseconds: 100),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
+                      constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: bubbleColor,
@@ -992,11 +1073,35 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
                 const SizedBox(height: 4),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Text(
-                    _formatTime(message.timestamp),
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: colors.tertiaryText),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.siblingInfo.hasSiblings) ...[
+                        _SiblingButton(
+                          icon: Icons.chevron_left_rounded,
+                          onTap: widget.onPreviousSibling,
+                        ),
+                        Text(
+                          '${widget.siblingInfo.index + 1}/${widget.siblingInfo.count}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: colors.tertiaryText,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        _SiblingButton(
+                          icon: Icons.chevron_right_rounded,
+                          onTap: widget.onNextSibling,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.tertiaryText,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1014,9 +1119,15 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
       title: context.l10n.messageActions,
       items: [
         if (widget.onCopy != null)
-          OtActionSheetItem(label: context.l10n.copy, onTap: () => widget.onCopy?.call()),
+          OtActionSheetItem(
+            label: context.l10n.copy,
+            onTap: () => widget.onCopy?.call(),
+          ),
         if (widget.onEdit != null)
-          OtActionSheetItem(label: context.l10n.edit, onTap: () => _showEditDialog(context)),
+          OtActionSheetItem(
+            label: context.l10n.edit,
+            onTap: () => _showEditDialog(context),
+          ),
         if (widget.onRegenerate != null)
           OtActionSheetItem(
             label: context.l10n.regenerate,
@@ -1038,7 +1149,10 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
       title: context.l10n.messageActions,
       items: [
         if (widget.onRetry != null)
-          OtActionSheetItem(label: context.l10n.retry, onTap: () => widget.onRetry?.call()),
+          OtActionSheetItem(
+            label: context.l10n.retry,
+            onTap: () => widget.onRetry?.call(),
+          ),
         if (widget.onDelete != null)
           OtActionSheetItem(
             label: context.l10n.delete,
@@ -1053,29 +1167,102 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final controller = TextEditingController(text: widget.message.content);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.editMessage),
-        content: TextField(
-          controller: controller,
-          maxLines: 5,
-          minLines: 1,
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(context.l10n.cancel),
+      builder: (context) {
+        final colors = context.otColors;
+        final size = MediaQuery.sizeOf(context);
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 28,
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onEdit?.call(controller.text);
-            },
-            style: FilledButton.styleFrom(shape: const StadiumBorder()),
-            child: Text(context.l10n.save),
+          backgroundColor: colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: colors.border),
           ),
-        ],
-      ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 720,
+              maxHeight: size.height * 0.82,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.editMessage,
+                    style: OTStyle.textStyle(
+                      color: colors.primaryText,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Flexible(
+                    child: TextField(
+                      controller: controller,
+                      autofocus: true,
+                      expands: true,
+                      maxLines: null,
+                      minLines: null,
+                      textAlignVertical: TextAlignVertical.top,
+                      keyboardType: TextInputType.multiline,
+                      style: OTStyle.textStyle(
+                        color: colors.primaryText,
+                        fontSize: 15,
+                        height: 1.45,
+                      ),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: colors.mutedFill,
+                        contentPadding: const EdgeInsets.all(14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: colors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(color: colors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                            color: colors.primaryText,
+                            width: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(context.l10n.cancel),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onEdit?.call(controller.text);
+                        },
+                        style: FilledButton.styleFrom(
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(context.l10n.save),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1093,6 +1280,32 @@ class _ChatMessageRowState extends State<_ChatMessageRow> {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+}
+
+class _SiblingButton extends StatelessWidget {
+  const _SiblingButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: Icon(
+          icon,
+          size: 18,
+          color: onTap == null
+              ? context.otColors.tertiaryText.withValues(alpha: 0.4)
+              : context.otColors.secondaryText,
+        ),
+      ),
+    );
   }
 }
 
@@ -1136,7 +1349,10 @@ class _AttachmentMenuGrid extends StatelessWidget {
                 _PrimaryToolCard(
                   icon: Icons.tune_rounded,
                   title: context.l10n.paramsLabel,
-                  subtitle: _configLabel(context, conversation.generationConfig),
+                  subtitle: _configLabel(
+                    context,
+                    conversation.generationConfig,
+                  ),
                   accentColor: colors.warning,
                   onTap: onEditGenerationConfig,
                 ),
@@ -1289,22 +1505,25 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           return Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(3, (index) {
-              final phase = (_controller.value - (index * 0.16)).clamp(
-                0.0,
-                1.0,
-              );
-              final opacity = 0.28 + ((1 - (phase - 0.5).abs() * 2) * 0.72);
-              final scale = 0.78 + ((1 - (phase - 0.5).abs() * 2) * 0.22);
+              final phase = (_controller.value + index * 0.22) % 1.0;
+              final wave =
+                  (math.sin((phase * math.pi * 2) - math.pi / 2) + 1) / 2;
+              final opacity = 0.32 + wave * 0.68;
+              final scale = 0.78 + wave * 0.22;
+              final yOffset = (1 - wave) * 2;
               return Opacity(
-                opacity: opacity.clamp(0.28, 1.0),
-                child: Transform.scale(
-                  scale: scale.clamp(0.78, 1.0),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: widget.colors.secondaryText,
-                      shape: BoxShape.circle,
+                opacity: opacity,
+                child: Transform.translate(
+                  offset: Offset(0, yOffset),
+                  child: Transform.scale(
+                    scale: scale,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: widget.colors.secondaryText,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
                 ),

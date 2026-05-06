@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_exit_guard.dart';
 import '../../../app/l10n_extension.dart';
 import '../../../app/ui_style.dart';
 
@@ -21,60 +23,92 @@ class MainShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.otColors;
-    return CupertinoPageScaffold(
-      backgroundColor: colors.pageBackground,
-      resizeToAvoidBottomInset: false,
-      child: Column(
-        children: [
-          Expanded(child: navigationShell),
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.shadowScrim,
-                  border: Border(
-                    top: BorderSide(color: colors.border, width: 0.5),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        final confirmed = await AppExitGuard.confirmExit(context);
+        if (confirmed) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: CupertinoPageScaffold(
+        backgroundColor: colors.pageBackground,
+        resizeToAvoidBottomInset: false,
+        child: Column(
+          children: [
+            Expanded(child: navigationShell),
+            ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.shadowScrim,
+                    border: Border(
+                      top: BorderSide(color: colors.border, width: 0.5),
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: CupertinoTabBar(
-                    currentIndex: navigationShell.currentIndex,
-                    onTap: _onTap,
-                    backgroundColor: CupertinoColors.transparent,
-                    activeColor: colors.accent,
-                    inactiveColor: colors.tertiaryText,
-                    border: null,
-                    items: [
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.chat_bubble_2, size: 22),
-                        activeIcon: const Icon(
-                          CupertinoIcons.chat_bubble_2_fill,
-                          size: 22,
-                        ),
-                        label: context.l10n.navChat,
+                  child: SafeArea(
+                    top: false,
+                    child: CupertinoTheme(
+                      data: CupertinoTheme.of(context).copyWith(
+                        textTheme: CupertinoTheme.of(context).textTheme
+                            .copyWith(
+                              tabLabelTextStyle: OTStyle.textStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                       ),
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.person_crop_square, size: 22),
-                        activeIcon: const Icon(
-                          CupertinoIcons.person_crop_square_fill,
-                          size: 22,
-                        ),
-                        label: context.l10n.navCharacters,
+                      child: CupertinoTabBar(
+                        currentIndex: navigationShell.currentIndex,
+                        onTap: _onTap,
+                        backgroundColor: CupertinoColors.transparent,
+                        activeColor: colors.accent,
+                        inactiveColor: colors.tertiaryText,
+                        border: null,
+                        items: [
+                          BottomNavigationBarItem(
+                            icon: const Icon(
+                              CupertinoIcons.chat_bubble_2,
+                              size: 22,
+                            ),
+                            label: context.l10n.navChat,
+                            activeIcon: const Icon(
+                              CupertinoIcons.chat_bubble_2_fill,
+                              size: 22,
+                            ),
+                          ),
+                          BottomNavigationBarItem(
+                            icon: const Icon(
+                              CupertinoIcons.person_crop_square,
+                              size: 22,
+                            ),
+                            label: context.l10n.navCharacters,
+                            activeIcon: const Icon(
+                              CupertinoIcons.person_crop_square_fill,
+                              size: 22,
+                            ),
+                          ),
+                          BottomNavigationBarItem(
+                            icon: const Icon(CupertinoIcons.sparkles, size: 22),
+                            label: context.l10n.navMore,
+                            activeIcon: const Icon(
+                              CupertinoIcons.sparkles,
+                              size: 22,
+                            ),
+                          ),
+                        ],
                       ),
-                      BottomNavigationBarItem(
-                        icon: const Icon(CupertinoIcons.sparkles, size: 22),
-                        activeIcon: const Icon(CupertinoIcons.sparkles, size: 22),
-                        label: context.l10n.navMore,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

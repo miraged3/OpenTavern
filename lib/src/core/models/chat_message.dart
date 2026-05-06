@@ -9,6 +9,7 @@ class ChatMessage {
     this.isTemplate = false,
     this.isPending = false,
     this.reasoning = '',
+    this.parentId,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class ChatMessage {
   final bool isTemplate;
   final bool isPending;
   final String reasoning;
+  final String? parentId;
 
   ChatMessage copyWith({
     String? id,
@@ -27,6 +29,7 @@ class ChatMessage {
     bool? isTemplate,
     bool? isPending,
     String? reasoning,
+    Object? parentId = _unset,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -36,6 +39,7 @@ class ChatMessage {
       isTemplate: isTemplate ?? this.isTemplate,
       isPending: isPending ?? this.isPending,
       reasoning: reasoning ?? this.reasoning,
+      parentId: parentId == _unset ? this.parentId : parentId as String?,
     );
   }
 
@@ -48,6 +52,7 @@ class ChatMessage {
       isTemplate: json['isTemplate'] as bool? ?? false,
       isPending: json['isPending'] as bool? ?? false,
       reasoning: json['reasoning'] as String? ?? '',
+      parentId: json['parentId'] as String?,
     );
   }
 
@@ -60,6 +65,9 @@ class ChatMessage {
       'isTemplate': isTemplate,
       'isPending': isPending,
       'reasoning': reasoning,
+      'parentId': parentId,
     };
   }
 }
+
+const Object _unset = Object();

@@ -323,9 +323,15 @@ class _SummaryPanel extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                _CountPill(label: context.l10n.modelsCountLabel, value: totalCount),
+                _CountPill(
+                  label: context.l10n.modelsCountLabel,
+                  value: totalCount,
+                ),
                 const SizedBox(width: 8),
-                _CountPill(label: context.l10n.enabledCountLabel, value: enabledCount),
+                _CountPill(
+                  label: context.l10n.enabledCountLabel,
+                  value: enabledCount,
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -354,7 +360,11 @@ class _SummaryPanel extends StatelessWidget {
                     minimumSize: const Size(76, 42),
                     shape: OTStyle.pillShape,
                   ),
-                  child: Text(selectionMode ? context.l10n.done : context.l10n.batchManage),
+                  child: Text(
+                    selectionMode
+                        ? context.l10n.done
+                        : context.l10n.batchManage,
+                  ),
                 ),
               ],
             ),
@@ -496,7 +506,10 @@ class _BatchBarDelegate extends SliverPersistentHeaderDelegate {
                 ),
               ),
               const Spacer(),
-              _BatchButton(label: context.l10n.selectAll, onPressed: onSelectAll),
+              _BatchButton(
+                label: context.l10n.selectAll,
+                onPressed: onSelectAll,
+              ),
               _BatchButton(label: context.l10n.enable, onPressed: onEnable),
               _BatchButton(label: context.l10n.disable, onPressed: onDisable),
               _BatchButton(
@@ -754,12 +767,17 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final (label, color) = switch (model.status) {
       ModelEndpointStatus.available => (
-        model.latencyMs == null ? context.l10n.available : '${model.latencyMs}ms',
+        model.latencyMs == null
+            ? context.l10n.available
+            : '${model.latencyMs}ms',
         OTStyle.success,
       ),
       ModelEndpointStatus.failed => (context.l10n.failed, OTStyle.danger),
       ModelEndpointStatus.testing => (context.l10n.testing, OTStyle.inProgress),
-      ModelEndpointStatus.unknown => (context.l10n.untested, OTStyle.secondaryText),
+      ModelEndpointStatus.unknown => (
+        context.l10n.untested,
+        OTStyle.secondaryText,
+      ),
     };
 
     return Text(
@@ -880,7 +898,9 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
         backgroundColor: OTStyle.pageBackground,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isEditing ? context.l10n.editModel : context.l10n.addModel),
+        title: Text(
+          _isEditing ? context.l10n.editModel : context.l10n.addModel,
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -905,7 +925,9 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
             child: _EditorIntroCard(
-              title: _isEditing ? _nameController.text.trim() : context.l10n.configureModelEndpoint,
+              title: _isEditing
+                  ? _nameController.text.trim()
+                  : context.l10n.configureModelEndpoint,
               subtitle: _connectionSource == ConnectionSource.cloud
                   ? context.l10n.cloudDescription
                   : context.l10n.customUrlDescription,
@@ -953,7 +975,9 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
               _TextFieldRow(
                 label: context.l10n.apiKey,
                 controller: _apiKeyController,
-                placeholder: _isEditing ? context.l10n.keepExistingKey : 'sk-...',
+                placeholder: _isEditing
+                    ? context.l10n.keepExistingKey
+                    : 'sk-...',
                 obscureText: false,
               ),
             ],
@@ -1055,7 +1079,8 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
   String _namePlaceholder(BuildContext context) {
     return switch (_connectionSource) {
       ConnectionSource.cloud => context.l10n.cloudVendorModelExample,
-      ConnectionSource.customUrl => '${context.l10n.customUrlExamplePrefix} ${apiFormatLabel(_customApiFormat)}',
+      ConnectionSource.customUrl =>
+        '${context.l10n.customUrlExamplePrefix} ${apiFormatLabel(_customApiFormat)}',
     };
   }
 
@@ -1173,13 +1198,17 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
       }
       setState(() {
         _availableModels = models;
-        _fetchModelsError = models.isEmpty ? context.l10n.noModelsReturned : null;
+        _fetchModelsError = models.isEmpty
+            ? context.l10n.noModelsReturned
+            : null;
       });
     } on DioException catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() => _fetchModelsError = _describeDioError(context.l10n, error));
+      setState(
+        () => _fetchModelsError = _describeDioError(context.l10n, error),
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -1214,7 +1243,9 @@ class _ModelEndpointEditorPageState extends State<_ModelEndpointEditorPage> {
     final model = _modelController.text.trim();
     final resolvedBaseUrl = _resolvedBaseUrl;
     final nameError = name.isEmpty ? context.l10n.enterModelName : null;
-    final baseUrlError = resolvedBaseUrl.isEmpty ? context.l10n.enterBaseUrl : null;
+    final baseUrlError = resolvedBaseUrl.isEmpty
+        ? context.l10n.enterBaseUrl
+        : null;
     final modelError = model.isEmpty ? context.l10n.enterModelId : null;
     if (nameError != null || baseUrlError != null || modelError != null) {
       setState(() {
@@ -1392,7 +1423,11 @@ class _ModelDiscoverySection extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: const StadiumBorder(),
                 ),
-                child: Text(isFetching ? context.l10n.fetchingModels : context.l10n.fetchModels),
+                child: Text(
+                  isFetching
+                      ? context.l10n.fetchingModels
+                      : context.l10n.fetchModels,
+                ),
               ),
             ],
           ),
@@ -1478,7 +1513,9 @@ class _EditorIntroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.otColors;
-    final resolvedTitle = title.trim().isEmpty ? context.l10n.configureModelEndpoint : title.trim();
+    final resolvedTitle = title.trim().isEmpty
+        ? context.l10n.configureModelEndpoint
+        : title.trim();
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,

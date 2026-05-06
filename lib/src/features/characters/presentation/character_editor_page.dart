@@ -78,7 +78,11 @@ class _CharacterEditorPageState extends State<CharacterEditorPage> {
         backgroundColor: colors.pageBackground,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        title: Text(_isEditing ? context.l10n.editCharacter : context.l10n.createCharacter),
+        title: Text(
+          _isEditing
+              ? context.l10n.editCharacter
+              : context.l10n.createCharacter,
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -298,13 +302,18 @@ class _AvatarPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    hasImage ? context.l10n.avatarSet : context.l10n.avatarNotSet,
+                    hasImage
+                        ? context.l10n.avatarSet
+                        : context.l10n.avatarNotSet,
                     style: TextStyle(color: colors.secondaryText, fontSize: 13),
                   ),
                 ],
               ),
             ),
-            TextButton(onPressed: onPickImage, child: Text(context.l10n.pickImage)),
+            TextButton(
+              onPressed: onPickImage,
+              child: Text(context.l10n.pickImage),
+            ),
             if (hasImage)
               TextButton(
                 onPressed: onClearImage,

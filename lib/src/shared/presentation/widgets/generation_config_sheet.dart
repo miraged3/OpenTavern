@@ -144,7 +144,9 @@ class _GenerationConfigSheetState extends State<_GenerationConfigSheet> {
                           onPressed: () => Navigator.of(
                             context,
                           ).pop(const GenerationConfigSheetResult.reset()),
-                          child: Text(widget.resetLabel ?? context.l10n.resetToDefault),
+                          child: Text(
+                            widget.resetLabel ?? context.l10n.resetToDefault,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),

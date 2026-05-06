@@ -38,6 +38,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+pubspec_overrides.yaml
 
 # Symbolication related
 app.*.symbols
@@ -49,6 +50,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/key.properties
+/android/app/*.jks
 
 # Generated platform and tooling files
 /ios/Pods/
@@ -57,10 +60,21 @@ app.*.map.json
 /linux/flutter/ephemeral/
 /macos/Flutter/ephemeral/
 /windows/flutter/ephemeral/
+/release/
+/dist/
 
 # Local env and editor files
+.env
+.env.*
+!.env.example
 *.lock.pid
 *.seed
 *.pid
 Thumbs.db
 Desktop.ini
+
+# Node tooling
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

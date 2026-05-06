@@ -67,7 +67,15 @@ class _CharactersPageState extends ConsumerState<CharactersPage> {
         ),
         slivers: [
           CupertinoSliverNavigationBar(
-            largeTitle: Text(context.l10n.charactersTitle),
+            largeTitle: Text(
+              context.l10n.charactersTitle,
+              style: OTStyle.textStyle(
+                color: colors.primaryText,
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
+            ),
             trailing: _selectionMode
                 ? CupertinoButton(
                     padding: EdgeInsets.zero,
@@ -75,7 +83,7 @@ class _CharactersPageState extends ConsumerState<CharactersPage> {
                     onPressed: _exitSelectionMode,
                     child: Text(
                       context.l10n.done,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: OTStyle.textStyle(fontWeight: FontWeight.w600),
                     ),
                   )
                 : null,
@@ -325,7 +333,8 @@ class _CharactersPageState extends ConsumerState<CharactersPage> {
       labelBuilder: (value) => switch (value) {
         _CharacterActionOption.chat => l10n.startChat,
         _CharacterActionOption.edit => l10n.edit,
-        _CharacterActionOption.favorite => character.isFavorite ? l10n.unfavorite : l10n.favorite,
+        _CharacterActionOption.favorite =>
+          character.isFavorite ? l10n.unfavorite : l10n.favorite,
         _CharacterActionOption.delete => l10n.delete,
       },
     );
@@ -548,14 +557,22 @@ class _CharacterBatchBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
-          _BatchPillButton(label: context.l10n.selectAll, onPressed: onSelectAll),
+          _BatchPillButton(
+            label: context.l10n.selectAll,
+            onPressed: onSelectAll,
+          ),
           const SizedBox(width: 8),
           _BatchPillButton(label: context.l10n.favorite, onPressed: onFavorite),
           const SizedBox(width: 8),
-          _BatchPillButton(label: context.l10n.unfavorite, onPressed: onUnfavorite),
+          _BatchPillButton(
+            label: context.l10n.unfavorite,
+            onPressed: onUnfavorite,
+          ),
           const Spacer(),
           _BatchPillButton(
-            label: selectedCount == 0 ? context.l10n.delete : '${context.l10n.delete} $selectedCount',
+            label: selectedCount == 0
+                ? context.l10n.delete
+                : '${context.l10n.delete} $selectedCount',
             onPressed: onDelete,
             isDestructive: true,
           ),

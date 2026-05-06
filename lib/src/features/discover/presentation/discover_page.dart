@@ -20,12 +20,22 @@ class DiscoverPage extends StatelessWidget {
         ),
         slivers: [
           CupertinoSliverNavigationBar(
-            largeTitle: Text(context.l10n.discoverTitle),
+            largeTitle: Text(
+              context.l10n.discoverTitle,
+              style: OTStyle.textStyle(
+                color: colors.primaryText,
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
+            ),
             border: Border(bottom: BorderSide(color: colors.border)),
             backgroundColor: colors.shadowScrim,
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(child: _SectionLabel(title: context.l10n.discoverQuickActions)),
+          SliverToBoxAdapter(
+            child: _SectionLabel(title: context.l10n.discoverQuickActions),
+          ),
           SliverToBoxAdapter(
             child: _ActionGroup(
               children: [
@@ -53,7 +63,9 @@ class DiscoverPage extends StatelessWidget {
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
-          SliverToBoxAdapter(child: _SectionLabel(title: context.l10n.discoverHelp)),
+          SliverToBoxAdapter(
+            child: _SectionLabel(title: context.l10n.discoverHelp),
+          ),
           SliverToBoxAdapter(
             child: _ActionGroup(
               children: [
@@ -87,7 +99,7 @@ class _SectionLabel extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: OTStyle.textStyle(
               color: colors.primaryText,
               fontSize: 18,
               fontWeight: FontWeight.w700,

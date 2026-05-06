@@ -13,6 +13,7 @@ import '../models/app_log_entry.dart';
 import '../models/character.dart';
 import '../models/chat_message.dart';
 import '../models/conversation.dart';
+import '../models/conversation_tree.dart';
 import '../models/generation_config.dart';
 import '../models/model_endpoint.dart';
 import '../models/provider_config.dart';
@@ -161,7 +162,11 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
   @override
   List<Conversation> build() {
     final loaded = _repository.loadAll();
-    final recovered = _recoverInterruptedConversations(loaded);
+    final normalized = [
+      for (final conversation in loaded)
+        normalizeConversationTree(conversation),
+    ];
+    final recovered = _recoverInterruptedConversations(normalized);
     if (!_sameConversationMessages(loaded, recovered)) {
       Future.microtask(() => _repository.saveAll(recovered));
     }
@@ -172,13 +177,14 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
     final now = DateTime.now();
     final greetingTemplate = pickCharacterGreetingTemplate(character);
     final defaultPersona = ref.read(defaultUserPersonaProvider);
+    final greetingMessageId = 'msg-${now.microsecondsSinceEpoch}';
     final conversation = Conversation(
       id: 'conv-${now.microsecondsSinceEpoch}',
       character: character,
       messages: [
         if (greetingTemplate.trim().isNotEmpty)
           ChatMessage(
-            id: 'msg-${now.microsecondsSinceEpoch}',
+            id: greetingMessageId,
             role: MessageRole.assistant,
             content: greetingTemplate,
             timestamp: now,
@@ -186,6 +192,9 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
           ),
       ],
       userPersonaId: defaultPersona.id,
+      activeLeafMessageId: greetingTemplate.trim().isNotEmpty
+          ? greetingMessageId
+          : null,
       updatedAt: now,
     );
     final next = [conversation, ...state];
@@ -277,6 +286,9 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
       userPersonaId: conversation.userPersonaId,
       modelEndpointId: conversation.modelEndpointId,
       generationConfig: conversation.generationConfig,
+      activeLeafMessageId: activeConversationLeafId(
+        conversation.copyWith(messages: recoveredMessages),
+      ),
       updatedAt: DateTime.now(),
     );
   }
@@ -294,7 +306,9 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
     for (var i = 0; i < left.length; i++) {
       final a = left[i];
       final b = right[i];
-      if (a.id != b.id || a.messages.length != b.messages.length) {
+      if (a.id != b.id ||
+          a.messages.length != b.messages.length ||
+          a.activeLeafMessageId != b.activeLeafMessageId) {
         return false;
       }
       for (var j = 0; j < a.messages.length; j++) {
@@ -304,7 +318,8 @@ class ConversationsNotifier extends Notifier<List<Conversation>> {
             am.content != bm.content ||
             am.role != bm.role ||
             am.reasoning != bm.reasoning ||
-            am.isPending != bm.isPending) {
+            am.isPending != bm.isPending ||
+            am.parentId != bm.parentId) {
           return false;
         }
       }
@@ -375,11 +390,13 @@ class ChatGenerationController extends Notifier<Set<String>> {
         : ref.read(userPersonaByIdProvider(conversation.userPersonaId!)) ??
               defaultUserPersona;
     final now = DateTime.now();
+    final parentId = activeConversationLeafId(conversation);
     final userMessage = ChatMessage(
       id: 'msg-${now.microsecondsSinceEpoch}',
       role: MessageRole.user,
       content: trimmed,
       timestamp: now,
+      parentId: parentId,
     );
     final updatedConversation = Conversation(
       id: conversation.id,
@@ -388,6 +405,7 @@ class ChatGenerationController extends Notifier<Set<String>> {
       userPersonaId: conversation.userPersonaId,
       modelEndpointId: conversation.modelEndpointId,
       generationConfig: conversation.generationConfig,
+      activeLeafMessageId: userMessage.id,
       updatedAt: now,
     );
     await _replaceConversation(updatedConversation);
@@ -429,12 +447,14 @@ class ChatGenerationController extends Notifier<Set<String>> {
     }
 
     final now = DateTime.now();
+    final parentId = activeConversationLeafId(conversation);
     final assistantPlaceholder = ChatMessage(
       id: 'msg-${now.microsecondsSinceEpoch + 1}',
       role: MessageRole.assistant,
       content: '',
       timestamp: now,
       isPending: true,
+      parentId: parentId,
     );
     final pendingConversation = Conversation(
       id: conversation.id,
@@ -443,6 +463,7 @@ class ChatGenerationController extends Notifier<Set<String>> {
       userPersonaId: conversation.userPersonaId,
       modelEndpointId: conversation.modelEndpointId,
       generationConfig: conversation.generationConfig,
+      activeLeafMessageId: assistantPlaceholder.id,
       updatedAt: now,
     );
 
@@ -491,6 +512,9 @@ class ChatGenerationController extends Notifier<Set<String>> {
           )
           .listen(
             (event) async {
+              if (!_subscriptions.containsKey(conversation.id)) {
+                return;
+              }
               if (event.type == LlmStreamEventType.reasoningDelta) {
                 aggregatedReasoning += event.delta;
                 if (!loggedReasoningStart) {
@@ -517,6 +541,7 @@ class ChatGenerationController extends Notifier<Set<String>> {
                       isPending: true,
                     ),
                   ],
+                  activeLeafMessageId: assistantPlaceholder.id,
                   updatedAt: DateTime.now(),
                 ),
               );
@@ -551,6 +576,7 @@ class ChatGenerationController extends Notifier<Set<String>> {
                       isPending: false,
                     ),
                   ],
+                  activeLeafMessageId: assistantPlaceholder.id,
                   updatedAt: DateTime.now(),
                 ),
               );
@@ -588,11 +614,17 @@ class ChatGenerationController extends Notifier<Set<String>> {
     final current = ref.read(conversationByIdProvider(conversationId));
     final pendingAssistantId = _pendingAssistantIds[conversationId];
     if (current != null && pendingAssistantId != null) {
+      final pendingAssistant = current.messages
+          .where((message) => message.id == pendingAssistantId)
+          .firstOrNull;
+      final nextMessages = current.messages
+          .where((message) => message.id != pendingAssistantId)
+          .toList();
       await _replaceConversation(
         current.copyWith(
-          messages: current.messages
-              .where((message) => message.id != pendingAssistantId)
-              .toList(),
+          messages: nextMessages,
+          activeLeafMessageId:
+              pendingAssistant?.parentId ?? nextMessages.lastOrNull?.id,
           updatedAt: DateTime.now(),
         ),
       );
@@ -620,14 +652,33 @@ class ChatGenerationController extends Notifier<Set<String>> {
   ) async {
     final current = ref.read(conversationByIdProvider(conversationId));
     if (current != null) {
+      var keptPartialReply = false;
+      ChatMessage? failedAssistant;
+      final nextMessages = <ChatMessage>[];
+      for (final item in current.messages) {
+        if (item.id != assistantMessageId) {
+          nextMessages.add(item);
+          continue;
+        }
+        failedAssistant = item;
+        if (item.content.trim().isNotEmpty ||
+            item.reasoning.trim().isNotEmpty) {
+          nextMessages.add(item.copyWith(isPending: false));
+          keptPartialReply = true;
+        }
+      }
       final nextConversation = current.copyWith(
-        messages: current.messages
-            .where((item) => item.id != assistantMessageId)
-            .toList(),
+        messages: nextMessages,
+        activeLeafMessageId: keptPartialReply
+            ? assistantMessageId
+            : failedAssistant?.parentId ?? nextMessages.lastOrNull?.id,
         updatedAt: DateTime.now(),
       );
       await _replaceConversation(nextConversation);
-      await _appendSystemMessage(nextConversation, 'system_send_failed');
+      await _appendSystemMessage(
+        nextConversation,
+        keptPartialReply ? 'system_interrupted' : 'system_send_failed',
+      );
     }
     await ref
         .read(appLogsProvider.notifier)
@@ -655,17 +706,20 @@ class ChatGenerationController extends Notifier<Set<String>> {
 
   Future<void> _appendSystemMessage(Conversation conversation, String content) {
     final now = DateTime.now();
+    final systemMessageId = 'sys-${now.microsecondsSinceEpoch}';
     return _replaceConversation(
       conversation.copyWith(
         messages: [
           ...conversation.messages,
           ChatMessage(
-            id: 'sys-${now.microsecondsSinceEpoch}',
+            id: systemMessageId,
             role: MessageRole.system,
             content: content,
             timestamp: now,
+            parentId: activeConversationLeafId(conversation),
           ),
         ],
+        activeLeafMessageId: systemMessageId,
         updatedAt: now,
       ),
     );
@@ -935,10 +989,13 @@ class ModelEndpointsNotifier extends Notifier<List<ModelEndpoint>> {
   }
 
   Future<void> upsert(ModelEndpoint model) async {
+    final nextModel = state.isEmpty
+        ? model.copyWith(isDefault: true, isEnabled: true)
+        : model;
     final next = _normalizeDefaultModels([
-      model,
+      nextModel,
       for (final item in state)
-        if (item.id != model.id) item,
+        if (item.id != nextModel.id) item,
     ]);
     await _setState(next);
   }

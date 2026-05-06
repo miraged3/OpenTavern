@@ -52,7 +52,9 @@ class SettingsPage extends ConsumerWidget {
             children: [
               _NavigationRow(
                 label: context.l10n.userPersonas,
-                value: context.l10n.userPersonasCount(ref.watch(userPersonasProvider).length),
+                value: context.l10n.userPersonasCount(
+                  ref.watch(userPersonasProvider).length,
+                ),
                 icon: Icons.badge_outlined,
                 onTap: () => context.pushNamed('user_personas'),
               ),
@@ -125,7 +127,10 @@ class SettingsPage extends ConsumerWidget {
               ),
               _SelectionRow(
                 label: context.l10n.reasoningMode,
-                value: _reasoningModeLabel(context, generationConfig.reasoningMode),
+                value: _reasoningModeLabel(
+                  context,
+                  generationConfig.reasoningMode,
+                ),
                 onTap: () =>
                     _editGenerationConfig(context, ref, generationConfig),
               ),
@@ -153,7 +158,10 @@ class SettingsPage extends ConsumerWidget {
     await ref.read(languagePreferenceProvider.notifier).setPreference(next);
   }
 
-  String _languagePreferenceLabel(BuildContext context, AppLanguagePreference preference) {
+  String _languagePreferenceLabel(
+    BuildContext context,
+    AppLanguagePreference preference,
+  ) {
     return switch (preference) {
       AppLanguagePreference.system => context.l10n.languageSystem,
       AppLanguagePreference.en => context.l10n.languageEnglish,
@@ -178,7 +186,10 @@ class SettingsPage extends ConsumerWidget {
     await ref.read(themePreferenceProvider.notifier).setPreference(next);
   }
 
-  String _themePreferenceLabel(BuildContext context, AppThemePreference preference) {
+  String _themePreferenceLabel(
+    BuildContext context,
+    AppThemePreference preference,
+  ) {
     return switch (preference) {
       AppThemePreference.system => context.l10n.themeSystem,
       AppThemePreference.light => context.l10n.themeLight,
@@ -228,7 +239,7 @@ class _SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 8),
       child: Text(
         text,
-        style: TextStyle(
+        style: OTStyle.textStyle(
           color: colors.primaryText,
           fontSize: 18,
           fontWeight: FontWeight.w800,
@@ -289,7 +300,7 @@ class _NavigationRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
+                style: OTStyle.textStyle(
                   color: colors.primaryText,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -298,7 +309,7 @@ class _NavigationRow extends StatelessWidget {
             ),
             Text(
               value,
-              style: TextStyle(
+              style: OTStyle.textStyle(
                 color: colors.secondaryText,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
@@ -364,7 +375,7 @@ class _ToggleRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: OTStyle.textStyle(
                     color: colors.primaryText,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -411,7 +422,7 @@ class _SelectionRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: TextStyle(
+                style: OTStyle.textStyle(
                   color: colors.primaryText,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -420,7 +431,7 @@ class _SelectionRow extends StatelessWidget {
             ),
             Text(
               value,
-              style: TextStyle(
+              style: OTStyle.textStyle(
                 color: colors.secondaryText,
                 fontSize: 15,
                 fontWeight: FontWeight.w400,
