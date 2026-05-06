@@ -69,6 +69,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get disable => 'Disable';
 
   @override
+  String get confirmExitTitle => 'Exit OpenTavern?';
+
+  @override
+  String get confirmExitMessage => 'Are you sure you want to exit OpenTavern?';
+
+  @override
+  String get confirmExitAction => 'Exit';
+
+  @override
   String get defaultBadge => 'Default';
 
   @override
@@ -615,7 +624,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutOpenTavernRepository =>
-      'Project: https://github.com/miraged3/OpenTavern';
+      'https://github.com/miraged3/OpenTavern';
 
   @override
   String get currentSelected => 'Current';

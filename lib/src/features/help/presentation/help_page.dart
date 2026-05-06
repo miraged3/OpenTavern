@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/external_url_opener.dart';
 import '../../../app/l10n_extension.dart';
 import '../../../app/ui_style.dart';
 import '../../../shared/presentation/widgets/ot_list_row.dart';
@@ -54,7 +55,24 @@ class HelpPage extends StatelessWidget {
       children: [
         Text(context.l10n.aboutOpenTavernDescription),
         const SizedBox(height: 8),
-        SelectableText(context.l10n.aboutOpenTavernRepository),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: CupertinoButton(
+            minimumSize: Size.zero,
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              ExternalUrlOpener.open(context.l10n.aboutOpenTavernRepository);
+            },
+            child: Text(
+              context.l10n.aboutOpenTavernRepository,
+              style: TextStyle(
+                color: colors.accent,
+                decoration: TextDecoration.underline,
+                decorationColor: colors.accent,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

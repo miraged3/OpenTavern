@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers/app_providers.dart';
+import 'app_exit_guard.dart';
 import 'generated/app_localizations.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -53,6 +54,9 @@ class OpenTavernApp extends ConsumerWidget {
       darkTheme: darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      builder: (context, child) {
+        return AppExitGuard(child: child ?? const SizedBox.shrink());
+      },
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
