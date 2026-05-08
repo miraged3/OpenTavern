@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.11+-blue.svg" alt="Flutter">
-  <img src="https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Web-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/release-Android%20%7C%20macOS%20%7C%20Windows%20x64%20%7C%20Linux%20x64%2FARM64-lightgrey.svg" alt="Release platforms">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
@@ -21,22 +21,43 @@
 - 💬 **沉浸式聊天** — 流式输出、消息编辑、重新生成、上下文控制
 - 🌍 **双语界面** — 英文 / 中文，支持跟随系统语言自动切换
 - 🎨 **自适应主题** — 浅色、深色、跟随系统
-- 📱 **移动优先** — 原生 iOS 与 Android 体验，同时支持桌面端与 Web
+- 📱 **移动优先** — 当前 Release 提供 Android、macOS、Windows x64、Linux x64 / ARM64 构建产物
 - 🔒 **隐私优先** — 默认本地存储；除非你自己配置远程模型，否则数据不会离开设备
 
+## 文档
+
+- [使用指南](./USER_GUIDE_zh.md)
+- [模型配置指南](./MODEL_CONFIG_zh.md)
+- [角色卡与聊天指南](./CHARACTER_CHAT_zh.md)
+- [开发者指南](./DEVELOPMENT_zh.md)
+
 ## 快速开始
+
+### 下载应用
+
+OpenTavern 通过 GitHub Releases 分发。普通使用请直接下载最新构建产物，不需要自行从源码构建：
+
+1. 打开 [latest release](https://github.com/miraged3/OpenTavern/releases/latest)。
+2. 下载与你的平台对应的安装包或压缩包。
+3. 安装或解压后运行 OpenTavern。
+
+当前 Release 可能会提供 Android APK、macOS app zip、Windows x64 bundle、Linux x64 bundle 和 Linux ARM64 bundle。Flutter 项目中保留了 iOS 和 Web 源码目录，但目前不会发布对应的官方构建产物。
+
+### 从源码构建
+
+从源码构建主要用于开发、测试或贡献代码。
 
 ### 环境要求
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) `^3.11.4`
 - 任意 IDE（VS Code / Android Studio / Xcode）
 
-### 运行项目
+### 本地运行
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/opentavern.git
-cd opentavern
+git clone https://github.com/miraged3/OpenTavern.git
+cd OpenTavern
 
 # 2. 安装依赖
 flutter pub get

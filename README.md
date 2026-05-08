@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.11+-blue.svg" alt="Flutter">
-  <img src="https://img.shields.io/badge/platform-iOS%20%7C%20Android%20%7C%20macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Web-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/release-Android%20%7C%20macOS%20%7C%20Windows%20x64%20%7C%20Linux%20x64%2FARM64-lightgrey.svg" alt="Release platforms">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 </p>
 
@@ -21,22 +21,43 @@
 - 💬 **Immersive Chat** — Streaming output, message editing, regeneration, and context control
 - 🌍 **Bilingual UI** — English / Chinese with system-language detection
 - 🎨 **Adaptive Themes** — Light, dark, and system-aware color schemes
-- 📱 **Mobile-First** — Native iOS & Android experience, also runs on desktop and web
+- 📱 **Mobile-First** — Release builds are provided for Android, macOS, Windows x64, and Linux x64 / ARM64
 - 🔒 **Privacy-First** — Local storage by default; your data never leaves your device unless you configure a remote model
 
+## Documentation
+
+- [中文使用指南](./docs/USER_GUIDE_zh.md)
+- [模型配置指南](./docs/MODEL_CONFIG_zh.md)
+- [角色卡与聊天指南](./docs/CHARACTER_CHAT_zh.md)
+- [开发者指南](./docs/DEVELOPMENT_zh.md)
+
 ## Getting Started
+
+### Download the app
+
+OpenTavern is distributed through GitHub Releases. For normal use, download the latest build directly instead of building from source:
+
+1. Open the [latest release](https://github.com/miraged3/OpenTavern/releases/latest).
+2. Download the package for your platform.
+3. Install or unpack it and run OpenTavern.
+
+Current release artifacts may include Android APK, macOS app zip, Windows x64 bundle, Linux x64 bundle, and Linux ARM64 bundle. iOS and Web source folders exist in the Flutter project, but official release artifacts are not currently published for those platforms.
+
+### Build from source
+
+Building from source is intended for development, testing, or contributing.
 
 ### Prerequisites
 
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) `^3.11.4`
 - A valid IDE (VS Code / Android Studio / Xcode)
 
-### Run the app
+### Run locally
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/yourusername/opentavern.git
-cd opentavern
+git clone https://github.com/miraged3/OpenTavern.git
+cd OpenTavern
 
 # 2. Install dependencies
 flutter pub get
