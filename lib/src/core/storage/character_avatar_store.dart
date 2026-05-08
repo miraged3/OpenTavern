@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
-
 import '../models/character.dart';
+import 'app_storage.dart';
 
 class CharacterAvatarStore {
   const CharacterAvatarStore();
@@ -39,7 +38,7 @@ class CharacterAvatarStore {
   }
 
   Future<Directory> _avatarDirectory() async {
-    final baseDirectory = await getApplicationDocumentsDirectory();
+    final baseDirectory = await AppStorage.openTavernDirectory();
     final directory = Directory('${baseDirectory.path}/character_avatars');
     if (!await directory.exists()) {
       await directory.create(recursive: true);

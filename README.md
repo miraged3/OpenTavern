@@ -76,7 +76,7 @@ lib/
 | State Management | [flutter_riverpod](https://pub.dev/packages/flutter_riverpod) |
 | Routing | [go_router](https://pub.dev/packages/go_router) |
 | Networking | [dio](https://pub.dev/packages/dio) |
-| Storage | `shared_preferences` + local file storage |
+| Storage | SQLite |
 | Localization | `flutter_localizations` + `intl` |
 | Markdown Rendering | [flutter_markdown](https://pub.dev/packages/flutter_markdown) |
 

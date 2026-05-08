@@ -1,4 +1,4 @@
-package com.example.open_tavern
+package fun.miraged.open_tavern
 
 import android.content.Intent
 import android.net.Uri

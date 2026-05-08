@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../import/character_card_importer.dart';
 import '../llm/character_prompt_builder.dart';
@@ -962,13 +961,9 @@ final currentUserNameProvider = Provider<String>(
   (ref) => ref.watch(defaultUserPersonaProvider).name,
 );
 
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden');
+final appStorageProvider = Provider<AppStorage>((ref) {
+  throw UnimplementedError('appStorageProvider must be overridden');
 });
-
-final appStorageProvider = Provider<AppStorage>(
-  (ref) => AppStorage(ref.watch(sharedPreferencesProvider)),
-);
 
 final modelEndpointRepositoryProvider = Provider<ModelEndpointRepository>(
   (ref) => ModelEndpointRepository(ref.watch(appStorageProvider)),

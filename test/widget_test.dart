@@ -1,19 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:open_tavern/src/app/open_tavern_app.dart';
 import 'package:open_tavern/src/core/providers/app_providers.dart';
+import 'package:open_tavern/src/core/storage/app_storage.dart';
 
 void main() {
   testWidgets('renders app shell tabs', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final preferences = await SharedPreferences.getInstance();
-
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],
+        overrides: [appStorageProvider.overrideWithValue(AppStorage.memory())],
         child: const OpenTavernApp(),
       ),
     );

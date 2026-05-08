@@ -56,7 +56,7 @@ flutter run
 | 状态管理 | [flutter_riverpod](https://pub.dev/packages/flutter_riverpod) |
 | 路由 | [go_router](https://pub.dev/packages/go_router) |
 | 网络 | [dio](https://pub.dev/packages/dio) |
-| 存储 | `shared_preferences` + 本地文件存储 |
+| 存储 | SQLite |
 | 本地化 | `flutter_localizations` + `intl` |
 | Markdown 渲染 | [flutter_markdown](https://pub.dev/packages/flutter_markdown) |
 
