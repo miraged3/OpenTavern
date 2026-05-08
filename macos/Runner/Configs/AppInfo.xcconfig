@@ -8,7 +8,7 @@
 PRODUCT_NAME = OpenTavern
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = fun.miraged.openTavern
+PRODUCT_BUNDLE_IDENTIFIER = work.miraged.openTavern
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 Mirage. All rights reserved.
